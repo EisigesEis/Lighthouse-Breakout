@@ -1,4 +1,8 @@
 # To-Do:
+# Unskippable Tasks:
+# - Move x of ball at different frametime than y according to ball.speed_x
+# - Fix wall sticking and roof jumping
+
 # Relevant Tasks:
 # - Allow movement every 2nd 3rd or 4th frame.... :/
 # - Add functionality for special blocks (grey, fire, de-buff, buff)
@@ -146,7 +150,7 @@ class ball():
         img[self.rect.y][x] = colors["ball"]
         return img
 
-    def move(self):
+    def move(self, move_x, move_y):
         collision_threshhold = 1 # may be deprecated due to pixelation
 
         wall_alive = 0 # assume all blocks have been destroyed
@@ -163,7 +167,7 @@ class ball():
                         print(f"I vertically collided with the block {item[0]}. Setting {self.speed_y=} to {self.speed_y*-1}")
                         self.speed_y *= -1
                     # check if collision was from right or left
-                    if (abs(self.rect.left - item[0].left) < collision_threshhold and self.speed_x < 0) or (abs(self.rect.left - item[0].right < collision_threshhold and self.speed_x > 0)):
+                    if (abs(self.rect.left - item[0].left) < 5 and self.speed_x < 0) or (abs(self.rect.left - item[0].right < 5 and self.speed_x > 0)):
                         self.speed_x *= -1
                     
                     # reduce block's strength
@@ -181,7 +185,8 @@ class ball():
             self.game_over = 1
         
         # handle collision with side walls
-        if self.rect.left < 0 or self.rect.right > screen_width-1:
+        if self.rect.left <= 0 or self.rect.right > screen_width:
+            print(f"I collided with the right side... setting {self.speed_x=} to {self.speed_x*-1}.")
             self.speed_x *= -1
         # handle collision with roof
         if self.rect.top <= 1:
@@ -223,7 +228,7 @@ class ball():
         self.rect = pygame.Rect(self.x, self.y, 1, 1)
         self.speed_x = 1
         self.speed_y = -1
-        self.speed_max = 7
+        self.speed_max = 2
         self.game_over = 0
         # print(f"Ball in {self.y} {self.x}")
 
