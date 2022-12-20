@@ -1,8 +1,17 @@
 # To-Do:
-# - Implement own FPS Clock
-# - Implement own Rect and Colliderect
+# Relevant Tasks:
+# - Allow movement every 2nd 3rd or 4th frame.... :/
+# - Add functionality for special blocks (grey, fire, de-buff, buff)
+# - Add replayability without restarting client
+# - Add more Levels and difficulty setting
 
-# - Somehow .update_img() is updating also for tuple elements that do not exist in the source
+# Look-Ahead Collision:
+# - Optimize collision check to only check in range or route of ball
+# - Check if ball collides when speed is applied, not when ball already collided
+
+# minor:
+# (- Implement own FPS Clock)
+# (- Implement own Rect and Colliderect)
 
 from pyghthouse import Pyghthouse, VerbosityLevel
 from login import username, token
@@ -115,7 +124,7 @@ class movingbar():
         self.width = 7
         self.x = int((screen_width / 2) - (self.width / 2))
         self.y = 12
-        self.speed = 3
+        self.speed = 6 # deprecated
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
         self.direction = 0
 
@@ -125,68 +134,70 @@ class ball():
     
     def draw(self, img):
         # print(f"Ball in {self.rect.y} {self.rect.x}")
-        img[self.rect.y][self.rect.x] = colors["ball"]
+
+        # is ball in range of img? (Add look-ahead collision!!!)
+        if self.rect.x < 0:
+            x = 0
+        elif self.rect.x >= screen_width:
+            x = screen_width-1
+        else:
+            x = self.rect.x
+        
+        img[self.rect.y][x] = colors["ball"]
         return img
 
     def move(self):
-        # collision threshhold
-        collision_thresh = 5
+        collision_threshhold = 1 # may be deprecated due to pixelation
 
-        # start off with assuming that the wall has been destroyed completely
-        wall_destroyed = 1
-        row_count = 0
+        wall_alive = 0 # assume all blocks have been destroyed
         for row in wall.blocks:
-            item_count = 0
             for item in row:
-                # check collision
+                # check if item was deleted
                 if not item[0]: continue
-                # print(f"collision for {self.rect} with {item[0]} is {self.rect.colliderect(item[0])}")
+
+                # check ball collision with blocks
                 if self.rect.colliderect(item[0]):
                     print(f"ball ({self.rect.x},{self.rect.y}) colliding with block: {item}")
                     # check if collision was from above or below
-                    if (abs(self.rect.bottom - item[0].top) < collision_thresh and self.speed_y > 0) or (abs(self.rect.top - item[0].bottom) < collision_thresh and self.speed_y < 0):
+                    if (abs(self.rect.bottom - item[0].top) < 5 and self.speed_y > 0) or (abs(self.rect.top - item[0].bottom) < 5 and self.speed_y < 0):
+                        print(f"I vertically collided with the block {item[0]}. Setting {self.speed_y=} to {self.speed_y*-1}")
                         self.speed_y *= -1
                     # check if collision was from right or left
-                    if (abs(self.rect.left - item[0].left) < collision_thresh and self.speed_x < 0) or (abs(self.rect.left - item[0].right < collision_thresh and self.speed_x > 0)):
+                    if (abs(self.rect.left - item[0].left) < collision_threshhold and self.speed_x < 0) or (abs(self.rect.left - item[0].right < collision_threshhold and self.speed_x > 0)):
                         self.speed_x *= -1
-                    # reduce block's strength by doing damage to it
-                    # optimization: check if blocks are accessible for ball?
+                    
+                    # reduce block's strength
                     if item[1] > 1:
                         item[1] -= 1
                     else:
                         item[0] = 0
-            
-                # check if blocks still exist, set wall_destroyed accordingly
-                if wall.blocks[row_count][item_count][0]:
-                    wall_destroyed = 0
-                # increase item counter
-                item_count += 1
-            # increase row counter
-            row_count += 1
-        # after iterating through all blocks, check if wall is destroyed
-        if wall_destroyed == 1:
-            self.game_over = 1
-
-        # check collision with side walls
-        if self.rect.left <= 0 or self.rect.right >= screen_width-1:
-            self.speed_x *= -1
+                    
+                # check if block still has strength
+                if item[0]:
+                    wall_alive += 1 # if so, wall has not been destroyed
         
-        # check for collision with top and bottom of screen
-        if self.rect.top <= 0:
+        # if wall has been destroyed, level was finished
+        if not wall_alive:
+            self.game_over = 1
+        
+        # handle collision with side walls
+        if self.rect.left < 0 or self.rect.right > screen_width-1:
+            self.speed_x *= -1
+        # handle collision with roof
+        if self.rect.top <= 1:
             print("I am colliding with top of screen.")
             self.speed_y *= -1
-        if self.rect.bottom >= screen_height-1:
-            # print("I fell off of the map.")
-            # self.game_over = -1
-            # return
-            self.speed_y *= -1
+        # handle collision with void (bottom)
+        if self.rect.bottom >= screen_height:
+            print("I fell off of the map.")
+            self.game_over = -1
+            keyboard.wait() # Add replayability here!!
 
-        # check for collision with movingbar
-        # print(f"{movingbar.rect}")
-        # print(f"{self.rect.colliderect(movingbar.rect)}")
+        # handle collision with movingbar
         if self.rect.colliderect(movingbar.rect):
             # check if colliding from the top
-            if abs(self.rect.bottom - movingbar.rect.top) < collision_thresh and self.speed_y > 0:
+            if abs(self.rect.bottom - movingbar.rect.top) < 5 and self.speed_y > 0:
+                print(f"I am colliding with the movingbar at {self.rect.x, self.rect.y} :))")
                 self.speed_y *= -1
                 self.speed_x += movingbar.direction
                 if self.speed_x > self.speed_max:
@@ -197,7 +208,7 @@ class ball():
                 #     self.speed_x += player_movingbar.direction
             else:
                 self.speed_x *= -1
-
+        
         self.rect.x += self.speed_x
         self.rect.y += self.speed_y
 
@@ -243,15 +254,20 @@ keyboard.wait('up') # give the paddle a ball start and a reset animation :D
 keyboard.add_hotkey('right', lambda: movingbar.move(1))
 keyboard.add_hotkey('left', lambda: movingbar.move(-1))
 
+
+framecounter = 0 # for operations that happen every n frame
 # general game loop
 while 1:
-    clock.tick(15) # game runs at 60fps
+    clock.tick(14) # game runs at 60fps
 
     # ball movement
-    ball.move()
+    framecounter += 1
+    if framecounter == 4:
+        ball.move()
+        framecounter = 0
+        wall.update_img() # stuff may have been destroyed
     
     # draw board
-    wall.update_img()
     img = wall.img
     img = movingbar.draw(img)
     img = ball.draw(img)
