@@ -229,8 +229,8 @@ class ball():
         self.x = x
         self.y = y
         self.rect = pygame.Rect(self.x, self.y, 1, 1)
-        self.speed_x = 5 # speed is frame count at which x or y will be moved
-        self.speed_y = -25 # and also the direction in which it will be moved at the frame count
+        self.speed_x = 4 # speed is frame count at which x or y will be moved
+        self.speed_y = -10 # and also the direction in which it will be moved at the frame count
         self.speed_max = 10
         self.collision = False
         self.game_over = 0
@@ -278,10 +278,9 @@ while 1:
     )
 
     if ball.collision: # collision so ball has to check x and y
-        ball.move(
-            True,
-            True
-        )
+        ball.collision = False
+        ball.move(True, True)
+        ball.collision = False
         framecounter = 0
     else: 
         ball.move(
