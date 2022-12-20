@@ -1,6 +1,7 @@
 # To-Do:
 # Unskippable Tasks:
 # - Move x of ball at different frametime than y according to ball.speed_x
+# - Collision must reset the framecounter
 # - Fix wall sticking and roof jumping
 
 # Relevant Tasks:
@@ -161,6 +162,7 @@ class ball():
 
                 # check ball collision with blocks
                 if self.rect.colliderect(item[0]):
+                    self.collision = True
                     print(f"ball ({self.rect.x},{self.rect.y}) colliding with block: {item}")
                     # check if collision was from above or below
                     if move_y and (abs(self.rect.bottom - item[0].top) < 5 and self.speed_y > 0) or (abs(self.rect.top - item[0].bottom) < 5 and self.speed_y < 0):
@@ -200,6 +202,7 @@ class ball():
 
         # handle collision with movingbar
         if self.rect.colliderect(movingbar.rect):
+            self.collision = True
             # check if colliding from the top
             if move_y and abs(self.rect.bottom - movingbar.rect.top) < 5 and self.speed_y > 0:
                 print(f"I am colliding with the movingbar at {self.rect.x, self.rect.y} :))")
@@ -229,6 +232,7 @@ class ball():
         self.speed_x = 5 # speed is frame count at which x or y will be moved
         self.speed_y = -25 # and also the direction in which it will be moved at the frame count
         self.speed_max = 10
+        self.collision = False
         self.game_over = 0
         # print(f"Ball in {self.y} {self.x}")
 
@@ -273,10 +277,18 @@ while 1:
         (framecounter-1) % abs(ball.speed_y) and not (framecounter % abs(ball.speed_y))
     )
 
-    ball.move(
-        (framecounter-1) % abs(ball.speed_x) and not (framecounter % abs(ball.speed_x)),
-        (framecounter-1) % abs(ball.speed_y) and not (framecounter % abs(ball.speed_y))
-    )
+    if ball.collision: # collision so ball has to check x and y
+        ball.move(
+            True,
+            True
+        )
+        framecounter = 0
+    else: 
+        ball.move(
+            (framecounter-1) % abs(ball.speed_x) and not (framecounter % abs(ball.speed_x)),
+            (framecounter-1) % abs(ball.speed_y) and not (framecounter % abs(ball.speed_y))
+        )
+
     if framecounter == abs(ball.speed_y): framecounter = 0
     wall.update_img() # items may have been destroyed or interacted with
     
