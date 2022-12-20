@@ -1,7 +1,6 @@
 # To-Do:
 # Unskippable Tasks:
 # - Move x of ball at different frametime than y according to ball.speed_x
-# - Collision must reset the framecounter
 # - Fix wall sticking and roof jumping
 
 # Relevant Tasks:
@@ -231,7 +230,7 @@ class ball():
         self.rect = pygame.Rect(self.x, self.y, 1, 1)
         self.speed_x = 4 # speed is frame count at which x or y will be moved
         self.speed_y = -10 # and also the direction in which it will be moved at the frame count
-        self.speed_max = 10
+        self.speed_max = 8
         self.collision = False
         self.game_over = 0
         # print(f"Ball in {self.y} {self.x}")
