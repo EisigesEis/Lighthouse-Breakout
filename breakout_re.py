@@ -2,6 +2,8 @@
 # - Implement own FPS Clock
 # - Implement own Rect and Colliderect
 
+# - Somehow .update_img() is updating also for tuple elements that do not exist in the source
+
 from pyghthouse import Pyghthouse, VerbosityLevel
 from login import username, token
 from breakout_data import levelmap
@@ -71,7 +73,7 @@ class wall():
         for row in self.blocks:
             for block in row:
                 if block[0]:
-                    # print(f"coloring for block[0]:")
+                    # print(f"coloring for {block[0]=}")
                     for y in range(block[0].y, block[0].y + block[0].height):
                         for x in range(block[0].x, block[0].x + block[0].width):
                             # print(f"Block ({y}, {x}): {colors['block'][block[1]-1]=}")
@@ -79,15 +81,18 @@ class wall():
 
     def update_img(self):
         self.img = np.zeros((14, 28, 3)).tolist()
+        # print(self.blocks)
+
         for row in self.blocks:
+            # print(f"checking {row=}")
             for block in row:
+                # print({f"-> checking {block=}"})
                 if block[0]:
-                    # print(f"coloring for block[0]:")
-                    for y in range(block[0].y, block[0].y + block[0].height):
+                    # print(f"coloring for {block[0]=}")
+                    for y in range(block[0].y, block[0].y + block[0].width):
                         for x in range(block[0].x, block[0].x + block[0].width):
                             # print(f"Block ({y}, {x}): {colors['block'][block[1]-1]=}")
                             self.img[y][x] = colors["block"][block[1]-1]
-
 
 class movingbar():
     def __init__(self):
@@ -119,13 +124,13 @@ class ball():
         self.reset(x, y)
     
     def draw(self, img):
-        print(f"Ball in {self.rect.y} {self.rect.x}")
+        # print(f"Ball in {self.rect.y} {self.rect.x}")
         img[self.rect.y][self.rect.x] = colors["ball"]
         return img
 
     def move(self):
         # collision threshhold
-        collision_thresh = 1
+        collision_thresh = 5
 
         # start off with assuming that the wall has been destroyed completely
         wall_destroyed = 1
@@ -134,22 +139,25 @@ class ball():
             item_count = 0
             for item in row:
                 # check collision
+                if not item[0]: continue
+                # print(f"collision for {self.rect} with {item[0]} is {self.rect.colliderect(item[0])}")
                 if self.rect.colliderect(item[0]):
+                    print(f"ball ({self.rect.x},{self.rect.y}) colliding with block: {item}")
                     # check if collision was from above or below
                     if (abs(self.rect.bottom - item[0].top) < collision_thresh and self.speed_y > 0) or (abs(self.rect.top - item[0].bottom) < collision_thresh and self.speed_y < 0):
                         self.speed_y *= -1
                     # check if collision was from right or left
                     if (abs(self.rect.left - item[0].left) < collision_thresh and self.speed_x < 0) or (abs(self.rect.left - item[0].right < collision_thresh and self.speed_x > 0)):
                         self.speed_x *= -1
-    	            # reduce block's strength by doing damage to it
+                    # reduce block's strength by doing damage to it
                     # optimization: check if blocks are accessible for ball?
-                    if wall.blocks[row_count][item_count][1] > 1:
-                        wall.blocks[row_count][item_count][1] -= 1
+                    if item[1] > 1:
+                        item[1] -= 1
                     else:
-                        wall.blocks[row_count][item_count][0] = (0, 0, 0, 0)
-                
+                        item[0] = 0
+            
                 # check if blocks still exist, set wall_destroyed accordingly
-                if wall.blocks[row_count][item_count][0] != (0, 0, 0, 0):
+                if wall.blocks[row_count][item_count][0]:
                     wall_destroyed = 0
                 # increase item counter
                 item_count += 1
@@ -174,8 +182,8 @@ class ball():
             self.speed_y *= -1
 
         # check for collision with movingbar
-        print(f"{movingbar.rect}")
-        print(f"{self.rect.colliderect(movingbar.rect)}")
+        # print(f"{movingbar.rect}")
+        # print(f"{self.rect.colliderect(movingbar.rect)}")
         if self.rect.colliderect(movingbar.rect):
             # check if colliding from the top
             if abs(self.rect.bottom - movingbar.rect.top) < collision_thresh and self.speed_y > 0:
@@ -201,7 +209,7 @@ class ball():
         # self.y = y - self.ball_rad
         self.x = x
         self.y = y
-        self.rect = pygame.Rect(self.x, self.y, 0, 0)
+        self.rect = pygame.Rect(self.x, self.y, 1, 1)
         self.speed_x = 1
         self.speed_y = -1
         self.speed_max = 7
@@ -229,7 +237,7 @@ p.set_image(img)
 
 
 # wait for player to start
-keyboard.wait('up')
+keyboard.wait('up') # give the paddle a ball start and a reset animation :D
 
 # add hotkey listeners
 keyboard.add_hotkey('right', lambda: movingbar.move(1))
