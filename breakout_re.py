@@ -163,11 +163,11 @@ class ball():
                 if self.rect.colliderect(item[0]):
                     print(f"ball ({self.rect.x},{self.rect.y}) colliding with block: {item}")
                     # check if collision was from above or below
-                    if (abs(self.rect.bottom - item[0].top) < 5 and self.speed_y > 0) or (abs(self.rect.top - item[0].bottom) < 5 and self.speed_y < 0):
+                    if move_y and (abs(self.rect.bottom - item[0].top) < 5 and self.speed_y > 0) or (abs(self.rect.top - item[0].bottom) < 5 and self.speed_y < 0):
                         print(f"I vertically collided with the block {item[0]}. Setting {self.speed_y=} to {self.speed_y*-1}")
                         self.speed_y *= -1
                     # check if collision was from right or left
-                    if (abs(self.rect.left - item[0].left) < 5 and self.speed_x < 0) or (abs(self.rect.left - item[0].right < 5 and self.speed_x > 0)):
+                    if move_x and (abs(self.rect.left - item[0].left) < 5 and self.speed_x < 0) or (abs(self.rect.left - item[0].right < 5 and self.speed_x > 0)):
                         self.speed_x *= -1
                     
                     # reduce block's strength
@@ -185,11 +185,11 @@ class ball():
             self.game_over = 1
         
         # handle collision with side walls
-        if self.rect.left <= 0 or self.rect.right > screen_width:
+        if move_x and self.rect.left <= 0 or self.rect.right > screen_width:
             print(f"I collided with the right side... setting {self.speed_x=} to {self.speed_x*-1}.")
             self.speed_x *= -1
         # handle collision with roof
-        if self.rect.top <= 1:
+        if move_y and self.rect.top <= 1:
             print("I am colliding with top of screen.")
             self.speed_y *= -1
         # handle collision with void (bottom)
@@ -201,21 +201,21 @@ class ball():
         # handle collision with movingbar
         if self.rect.colliderect(movingbar.rect):
             # check if colliding from the top
-            if abs(self.rect.bottom - movingbar.rect.top) < 5 and self.speed_y > 0:
+            if move_y and abs(self.rect.bottom - movingbar.rect.top) < 5 and self.speed_y > 0:
                 print(f"I am colliding with the movingbar at {self.rect.x, self.rect.y} :))")
                 self.speed_y *= -1
                 self.speed_x += movingbar.direction
-                if self.speed_x > self.speed_max:
+                if self.speed_x < self.speed_max:
                     self.speed_x = self.speed_max
                 elif self.speed_x < 0 and self.speed_x < -self.speed_max:
                     self.speed_x = -self.speed_max
                 # elif self.speed_x == 0:
                 #     self.speed_x += player_movingbar.direction
-            else:
+            elif move_x:
                 self.speed_x *= -1
         
-        self.rect.x += self.speed_x
-        self.rect.y += self.speed_y
+        self.rect.x += move_x * self.speed_x / abs(self.speed_x)
+        self.rect.y += move_y * self.speed_y / abs(self.speed_y)
 
         return self.game_over
     
@@ -226,9 +226,9 @@ class ball():
         self.x = x
         self.y = y
         self.rect = pygame.Rect(self.x, self.y, 1, 1)
-        self.speed_x = 1
-        self.speed_y = -1
-        self.speed_max = 2
+        self.speed_x = 5 # speed is frame count at which x or y will be moved
+        self.speed_y = -25 # and also the direction in which it will be moved at the frame count
+        self.speed_max = 10
         self.game_over = 0
         # print(f"Ball in {self.y} {self.x}")
 
@@ -263,14 +263,22 @@ keyboard.add_hotkey('left', lambda: movingbar.move(-1))
 framecounter = 0 # for operations that happen every n frame
 # general game loop
 while 1:
-    clock.tick(14) # game runs at 60fps
+    clock.tick(30) # game runs at 60fps
 
-    # ball movement
+    # ball movement through framecounter logic
     framecounter += 1
-    if framecounter == 4:
-        ball.move()
-        framecounter = 0
-        wall.update_img() # stuff may have been destroyed
+    print(
+        framecounter,
+        (framecounter-1) % abs(ball.speed_x) and not (framecounter % abs(ball.speed_x)),
+        (framecounter-1) % abs(ball.speed_y) and not (framecounter % abs(ball.speed_y))
+    )
+
+    ball.move(
+        (framecounter-1) % abs(ball.speed_x) and not (framecounter % abs(ball.speed_x)),
+        (framecounter-1) % abs(ball.speed_y) and not (framecounter % abs(ball.speed_y))
+    )
+    if framecounter == abs(ball.speed_y): framecounter = 0
+    wall.update_img() # items may have been destroyed or interacted with
     
     # draw board
     img = wall.img
