@@ -161,13 +161,23 @@ class ball():
                 if self.rect.colliderect(item[0]):
                     self.collision = True
                     print(f"ball ({self.rect.x},{self.rect.y}) colliding with block: {item}")
-                    # check if collision was from above or below
-                    if (abs(self.rect.bottom - item[0].top) < 5 and self.speed_y > 0) or (abs(self.rect.top - item[0].bottom) < 5 and self.speed_y < 0):
-                        print(f"I vertically collided with the block {item[0]}. Setting {self.speed_y=} to {self.speed_y*-1}")
-                        self.speed_y *= -1
-                    # check if collision was from right or left
-                    if (abs(self.rect.left - item[0].left) < 5 and self.speed_x < 0) or (abs(self.rect.left - item[0].right < 5 and self.speed_x > 0)):
-                        self.speed_x *= -1
+
+                    if move_y:
+                        # check collision from above
+                        if (abs(self.rect.bottom - item[0].top) < 5 and self.speed_y > 0):
+                            # print(f"I vertically collided with the block {item[0]}. Setting {self.speed_y=} to {self.speed_y*-1}")
+                            self.speed_y *= -1
+                        # check collision below block
+                        elif (abs(self.rect.top - item[0].bottom) < 5 and self.speed_y < 0):
+                            self.speed_y *= -1
+                    
+                    if move_x:
+                        # check collision from left
+                        if (abs(self.rect.left - item[0].left) < 5 and self.speed_x < 0):
+                            self.speed_x *= -1
+                        # check collision from right
+                        elif (abs(self.rect.left - item[0].right < 5 and self.speed_x > 0)):
+                            self.speed_x *= -1
                     
                     # reduce block's strength
                     if item[1] > 1:
