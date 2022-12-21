@@ -1,7 +1,7 @@
 # To-Do:
 # Unskippable Tasks:
 # - Move x of ball at different frametime than y according to ball.speed_x
-# - Fix wall sticking and roof jumping
+# - Fix jank collision with blocks, figure out how to include this in framecount logic
 
 # Relevant Tasks:
 # - Allow movement every 2nd 3rd or 4th frame.... :/
@@ -151,24 +151,22 @@ class ball():
         return img
 
     def move(self, move_x, move_y):
-        collision_threshhold = 1 # may be deprecated due to pixelation
-
         wall_alive = 0 # assume all blocks have been destroyed
         for row in wall.blocks:
             for item in row:
-                # check if item was deleted
+                # check if item was already deleted
                 if not item[0]: continue
 
-                # check ball collision with blocks
+                # check ball collision with item
                 if self.rect.colliderect(item[0]):
                     self.collision = True
                     print(f"ball ({self.rect.x},{self.rect.y}) colliding with block: {item}")
                     # check if collision was from above or below
-                    if move_y and (abs(self.rect.bottom - item[0].top) < 5 and self.speed_y > 0) or (abs(self.rect.top - item[0].bottom) < 5 and self.speed_y < 0):
+                    if (abs(self.rect.bottom - item[0].top) < 5 and self.speed_y > 0) or (abs(self.rect.top - item[0].bottom) < 5 and self.speed_y < 0):
                         print(f"I vertically collided with the block {item[0]}. Setting {self.speed_y=} to {self.speed_y*-1}")
                         self.speed_y *= -1
                     # check if collision was from right or left
-                    if move_x and (abs(self.rect.left - item[0].left) < 5 and self.speed_x < 0) or (abs(self.rect.left - item[0].right < 5 and self.speed_x > 0)):
+                    if (abs(self.rect.left - item[0].left) < 5 and self.speed_x < 0) or (abs(self.rect.left - item[0].right < 5 and self.speed_x > 0)):
                         self.speed_x *= -1
                     
                     # reduce block's strength
@@ -186,13 +184,15 @@ class ball():
             self.game_over = 1
         
         # handle collision with side walls
-        if move_x and self.rect.left <= 0 or self.rect.right > screen_width:
-            print(f"I collided with the right side... setting {self.speed_x=} to {self.speed_x*-1}.")
-            self.speed_x *= -1
+        if self.rect.left <= 0:
+            self.speed_x = abs(self.speed_x)
+        if self.rect.right > screen_width:
+            # print(f"I collided with the right side at ({self.rect.x},{self.rect.y}) setting {self.speed_x=} to {self.speed_x*-1}.")
+            self.speed_x = -abs(self.speed_x)
         # handle collision with roof
-        if move_y and self.rect.top <= 1:
-            print("I am colliding with top of screen.")
-            self.speed_y *= -1
+        if self.rect.top <= 0:
+            # print("I am colliding with top of screen.")
+            self.speed_y = abs(self.speed_y)
         # handle collision with void (bottom)
         if self.rect.bottom >= screen_height:
             print("I fell off of the map.")
@@ -203,7 +203,7 @@ class ball():
         if self.rect.colliderect(movingbar.rect):
             self.collision = True
             # check if colliding from the top
-            if move_y and abs(self.rect.bottom - movingbar.rect.top) < 5 and self.speed_y > 0:
+            if abs(self.rect.bottom - movingbar.rect.top) < 5 and self.speed_y > 0:
                 print(f"I am colliding with the movingbar at {self.rect.x, self.rect.y} :))")
                 self.speed_y *= -1
                 self.speed_x += movingbar.direction
@@ -270,12 +270,11 @@ while 1:
 
     # ball movement through framecounter logic
     framecounter += 1
-    print(
-        framecounter,
-        (framecounter-1) % abs(ball.speed_x) and not (framecounter % abs(ball.speed_x)),
-        (framecounter-1) % abs(ball.speed_y) and not (framecounter % abs(ball.speed_y))
-    )
-
+    # print(
+    #     framecounter,
+    #     (framecounter-1) % abs(ball.speed_x) and not (framecounter % abs(ball.speed_x)),
+    #     (framecounter-1) % abs(ball.speed_y) and not (framecounter % abs(ball.speed_y))
+    # )
     if ball.collision: # collision so ball has to check x and y
         ball.collision = False
         ball.move(True, True)
