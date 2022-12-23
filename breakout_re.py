@@ -1,12 +1,13 @@
 # To-Do:
 # Unskippable Tasks:
-# - Move x of ball at different frametime than y according to ball.speed_x
-# - Fix jank collision with blocks, figure out how to include this in framecount logic
+# - Remove ball staggering when colliding with movingbar or block
+# - Add more effect from movingbar.direction towards ball movement
+#   (allow increase and direction switch while still touching instead of frameskip?)
+# - Only call wall.update_img() when block collision happened
 
 # Relevant Tasks:
-# - Allow movement every 2nd 3rd or 4th frame.... :/
 # - Add functionality for special blocks (grey, fire, de-buff, buff)
-# - Add replayability without restarting client
+# - Add replayability without restarting client (use set_image_callback perhaps? a runner maybe too)
 # - Add more Levels and difficulty setting
 
 # Look-Ahead Collision:
@@ -85,12 +86,12 @@ class wall():
     def draw(self): # deprecated
         for row in self.blocks:
             for block in row:
-                if block[0]:
-                    # print(f"coloring for {block[0]=}")
-                    for y in range(block[0].y, block[0].y + block[0].height):
-                        for x in range(block[0].x, block[0].x + block[0].width):
-                            # print(f"Block ({y}, {x}): {colors['block'][block[1]-1]=}")
-                            self.img[y][x] = colors["block"][block[1]-1]
+                if item[0]:
+                    # print(f"coloring for {item[0]=}")
+                    for y in range(item[0].y, item[0].y + item[0].height):
+                        for x in range(item[0].x, item[0].x + item[0].width):
+                            # print(f"item ({y}, {x}): {colors['item'][item[1]-1]=}")
+                            self.img[y][x] = colors["block"][item[1]-1]
 
     def update_img(self):
         self.img = np.zeros((14, 28, 3)).tolist()
@@ -98,14 +99,14 @@ class wall():
 
         for row in self.blocks:
             # print(f"checking {row=}")
-            for block in row:
-                # print({f"-> checking {block=}"})
-                if block[0]:
-                    # print(f"coloring for {block[0]=}")
-                    for y in range(block[0].y, block[0].y + block[0].width):
-                        for x in range(block[0].x, block[0].x + block[0].width):
-                            # print(f"Block ({y}, {x}): {colors['block'][block[1]-1]=}")
-                            self.img[y][x] = colors["block"][block[1]-1]
+            for item in row:
+                # print({f"-> checking {item=}"})
+                if item[1]:
+                    # print(f"coloring for {item[0]=}")
+                    for y in range(item[0].y, item[0].y + item[0].width):
+                        for x in range(item[0].x, item[0].x + item[0].width):
+                            # print(f"item ({y}, {x}): {colors['item'][item[1]-1]=}")
+                            self.img[y][x] = colors["block"][item[1]-1]
 
 class movingbar():
     def __init__(self):
@@ -151,6 +152,87 @@ class ball():
         return img
 
     def move(self, move_x, move_y):
+        wall_alive = False # assume all items have been destroyed
+
+        # handle collision with items
+        for row in wall.blocks:
+            for item in row:
+                if not item[1]: continue # skip destroyed item
+                
+                for x in range(item[0].width):
+                    if (self.rect.top, self.rect.x) == (item[0].bottom, x+item[0].x) and self.speed_y < 0:
+                        self.speed_y *= -1
+                        self.collision['y'] = True
+                        print(f"I collided with bottom of {item[0]=}")
+                    elif (self.rect.bottom, self.rect.x) == (item[0].top, x+item[0].x) and self.speed_y > 0: # (y, x)
+                        self.speed_y *= -1
+                        self.collision['y'] = True
+                        print(f"I collided with top of {item[0]=}")
+                for y in range(item[0].height): # check 
+                    if (self.rect.y, self.rect.right) == (y+item[0].y, item[0].left) and self.speed_x > 0:
+                        self.speed_x *= -1
+                        self.collision['x'] = True
+                        print(f"I collided with left of {item[0]=}")
+                    elif (self.rect.y, self.rect.left) == (y+item[0].y, item[0].right) and self.speed_x < 0:
+                        self.speed_x *= -1
+                        self.collision['x'] = True
+                        print(f"I collided with right of {item[0]=}")
+
+                # handle item interaction on collision
+                if self.collision['x'] or self.collision['y']:
+                    if item[1]:
+                        item[1] -= 1
+                self.collision['x'] = False
+                self.collision['y'] = False
+                # determine if item still has health
+                if not wall_alive and item[1]: wall_alive = True
+
+        # handle collision with side walls
+        if self.rect.left <= 0:
+            self.speed_x = abs(self.speed_x)
+        if self.rect.right >= screen_width:
+            print(f"I collided with the right side at ({self.rect.x},{self.rect.y}) setting {self.speed_x=} to {self.speed_x*-1}.")
+            self.speed_x = -abs(self.speed_x)
+        # handle collision with roof
+        if self.rect.top <= 0:
+            print("I am colliding with top of screen.")
+            self.speed_y = abs(self.speed_y)
+        # handle collision with void (bottom)
+        if self.rect.bottom >= screen_height:
+            print("I fell off of the map.")
+            self.speed_y = -abs(self.speed_y)
+            keyboard.wait()
+
+        # handle collision with movingbar
+        if self.rect.colliderect(movingbar.rect):
+            # check if colliding from the top
+            if abs(self.rect.bottom - movingbar.rect.top) < 20 and self.speed_y > 0:
+                print(f"I am colliding with the movingbar at {self.rect.x, self.rect.y} :))")
+                self.speed_y = -abs(self.speed_y)
+                self.speed_x += movingbar.direction
+                print(f"{self.speed_x-movingbar.direction} =» {self.speed_x}")
+                self.collision['movingbar'] = True
+                if self.speed_x > self.speed_max:
+                    self.speed_x = self.speed_max
+                elif self.speed_x < 0 and self.speed_x < -self.speed_max:
+                    self.speed_x = -self.speed_max
+                # elif self.speed_x == 0:
+                #     self.speed_x += player_movingbar.direction
+            # collision from side
+            elif move_x:
+                self.speed_x *= -1
+                
+        if move_x and not (self.collision['y'] or self.collision['movingbar']):
+            self.rect.x += int(move_x * self.speed_x / abs(self.speed_x))
+            self.collision['x'] = False
+            print(f"=> moving towards ({self.rect.x},{self.rect.y})")
+        if move_y and not self.collision['x']:
+            self.rect.y += int(move_y * self.speed_y / abs(self.speed_y))
+            self.collision['y'] = False
+            self.collision['movingbar'] = False
+            print(f"=> moving towards ({self.rect.x},{self.rect.y})")
+
+    def old_move(self, move_x, move_y): # deprecated
         wall_alive = 0 # assume all blocks have been destroyed
         for row in wall.blocks:
             for item in row:
@@ -158,33 +240,58 @@ class ball():
                 if not item[0]: continue
 
                 # check ball collision with item
-                if self.rect.colliderect(item[0]):
-                    self.collision = True
-                    print(f"ball ({self.rect.x},{self.rect.y}) colliding with block: {item}")
-
-                    if move_y:
+                # if self.rect.colliderect(item[0]):
+                #     self.collision = True
+                #     print(f"ball ({self.rect.x},{self.rect.y}) colliding with block: {item}")
+                
+                """if move_y:
                         # check collision from above
-                        if (abs(self.rect.bottom - item[0].top) < 5 and self.speed_y > 0):
+                        if (abs(self.rect.bottom - item[0].top) < 0 and self.speed_y > 0):
                             # print(f"I vertically collided with the block {item[0]}. Setting {self.speed_y=} to {self.speed_y*-1}")
                             self.speed_y *= -1
                         # check collision below block
-                        elif (abs(self.rect.top - item[0].bottom) < 5 and self.speed_y < 0):
+                        elif (abs(self.rect.top - item[0].bottom) < 0 and self.speed_y < 0):
                             self.speed_y *= -1
                     
                     if move_x:
                         # check collision from left
-                        if (abs(self.rect.left - item[0].left) < 5 and self.speed_x < 0):
+                        if (abs(self.rect.left - item[0].left) < 0 and self.speed_x < 0):
                             self.speed_x *= -1
                         # check collision from right
-                        elif (abs(self.rect.left - item[0].right < 5 and self.speed_x > 0)):
-                            self.speed_x *= -1
+                        elif (abs(self.rect.left - item[0].right < 0 and self.speed_x > 0)):
+                            self.speed_x *= -1"""
                     
                     # reduce block's strength
-                    if item[1] > 1:
+                
+                # handle ball collision with item
+                # print(f"checking {item[0]=}")
+                for x in range(item[0].width):
+                    if (self.rect.top, self.rect.x) == (item[0].bottom, x+item[0].x) and self.speed_y < 0: # (y, x)
+                        self.speed_y *= -1
+                        self.collision = True
+                        print(f"I collided with bottom of {item[0]=}")
+                    elif (self.rect.bottom, self.rect.x) == (item[0].top, x+item[0].x) and self.speed_y > 0: # (y, x)
+                        self.speed_y *= -1
+                        self.collision = True
+                        print(f"I collided with top of {item[0]=}")
+                for y in range(item[0].height):
+                    # print(f"({self.rect.y}, {self.rect.right}) ?= ({y}, {item[0].left})")
+                    if (self.rect.y, self.rect.right) == (y+item[0].y, item[0].left) and self.speed_x > 0:
+                        self.speed_x *= -1
+                        self.collision = True
+                        print(f"I collided with left of {item[0]=}")
+                    elif (self.rect.y, self.rect.left) == (y+item[0].y, item[0].right) and self.speed_x < 0:
+                        self.speed_x *= -1
+                        self.collision = True
+                        print(f"I collided with right of {item[0]=}")
+
+                # handle item interaction on collision with it
+                if self.collision:
+                    if item[1] > 1: # reduce strength
                         item[1] -= 1
-                    else:
+                    else: # delete
                         item[0] = 0
-                    
+
                 # check if block still has strength
                 if item[0]:
                     wall_alive += 1 # if so, wall has not been destroyed
@@ -200,7 +307,7 @@ class ball():
             # print(f"I collided with the right side at ({self.rect.x},{self.rect.y}) setting {self.speed_x=} to {self.speed_x*-1}.")
             self.speed_x = -abs(self.speed_x)
         # handle collision with roof
-        if self.rect.top <= 0:
+        if self.rect.y <= 0:
             # print("I am colliding with top of screen.")
             self.speed_y = abs(self.speed_y)
         # handle collision with void (bottom)
@@ -213,11 +320,11 @@ class ball():
         if self.rect.colliderect(movingbar.rect):
             self.collision = True
             # check if colliding from the top
-            if abs(self.rect.bottom - movingbar.rect.top) < 5 and self.speed_y > 0:
+            if abs(self.rect.bottom - movingbar.rect.top) < 0 and self.speed_y > 0:
                 print(f"I am colliding with the movingbar at {self.rect.x, self.rect.y} :))")
                 self.speed_y *= -1
                 self.speed_x += movingbar.direction
-                if self.speed_x < self.speed_max:
+                if self.speed_x > self.speed_max:
                     self.speed_x = self.speed_max
                 elif self.speed_x < 0 and self.speed_x < -self.speed_max:
                     self.speed_x = -self.speed_max
@@ -241,7 +348,7 @@ class ball():
         self.speed_x = 4 # speed is frame count at which x or y will be moved
         self.speed_y = -10 # and also the direction in which it will be moved at the frame count
         self.speed_max = 8
-        self.collision = False
+        self.collision = {'x':False, 'y':False, 'movingbar':False}
         self.game_over = 0
         # print(f"Ball in {self.y} {self.x}")
 
@@ -276,7 +383,7 @@ keyboard.add_hotkey('left', lambda: movingbar.move(-1))
 framecounter = 0 # for operations that happen every n frame
 # general game loop
 while 1:
-    clock.tick(30) # game runs at 60fps
+    clock.tick(10) # game runs at 60fps
 
     # ball movement through framecounter logic
     framecounter += 1
@@ -285,19 +392,21 @@ while 1:
     #     (framecounter-1) % abs(ball.speed_x) and not (framecounter % abs(ball.speed_x)),
     #     (framecounter-1) % abs(ball.speed_y) and not (framecounter % abs(ball.speed_y))
     # )
-    if ball.collision: # collision so ball has to check x and y
-        ball.collision = False
-        ball.move(True, True)
-        ball.collision = False
-        framecounter = 0
-    else: 
-        ball.move(
-            (framecounter-1) % abs(ball.speed_x) and not (framecounter % abs(ball.speed_x)),
-            (framecounter-1) % abs(ball.speed_y) and not (framecounter % abs(ball.speed_y))
-        )
+    # if ball.collision['x']: # collision so ball has to check x and y
+    #     ball.collision = False
+    #     ball.move(True, True)
+    #     ball.collision = False
+        # framecounter = 0
+    # else: 
+    move_y = (framecounter-1) % abs(ball.speed_y) and not (framecounter % abs(ball.speed_y))
+    move_x = (framecounter-1) % abs(ball.speed_x) and not (framecounter % abs(ball.speed_x)) and not move_y
+    ball.move(
+        move_x,
+        move_y
+    )
 
     if framecounter == abs(ball.speed_y): framecounter = 0
-    wall.update_img() # items may have been destroyed or interacted with
+    wall.update_img() # items may have been destroyed or interacted with # only when collision was true
     
     # draw board
     img = wall.img
