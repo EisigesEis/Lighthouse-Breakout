@@ -22,6 +22,7 @@
 # - Check if ball collides when speed is applied, not when ball already collided
 
 # minor:
+# ball color turns grey on high speed
 # (- Implement own FPS Clock)
 
 from pyghthouse import Pyghthouse, VerbosityLevel
@@ -231,14 +232,14 @@ class ball_class():
                 draw_board()
                 # draw life bar
                 img = p.get_image()
-                for y in range(11, 14):
+                for y in range(3):
                     for x in range(5):
                         img[y][x] = [50,50,50]
                 for x in range(3):
                     if self.lives > x:
-                        img[12][x+1] = [255,255,255]
+                        img[1][x+1] = [255,255,255]
                     else:
-                        img[12][x+1] = [220,20,60]
+                        img[1][x+1] = [220,20,60]
                 p.set_image(img)
                 keyboard.wait('up')
 
@@ -296,6 +297,8 @@ class level_selection_class():
         else:
             self.selected_level += k
 
+        self.y = 5 + 6 * int(self.selected_level//4) # WHY DOES THIS NEED AN INT CONVERSION???!?
+        # print(f"5 + 6 * {self.selected_level//4} = {self.y}")
         self.draw()
     
     def confirm(self):
@@ -305,7 +308,7 @@ class level_selection_class():
     def draw(self):
         next_img = self.callback_img[:]
         for x in range(self.width):
-            next_img[self.y*28 + self.selected_level*(2+self.width) + x + 2] = colors["movingbar"]
+            next_img[self.y*28 + (self.selected_level - self.selected_level//4*4) * (2 + self.width) + x + 2] = colors["movingbar"]
         p.set_image(next_img)
         
 def draw_board():
