@@ -165,20 +165,20 @@ class ball_class():
                     if (self.rect.top, self.rect.x) == (item[0].bottom, x+item[0].x) and self.speed_y < 0:
                         self.speed_y *= -1
                         self.collision['y'] = True
-                        print(f"I collided with bottom of {item[0]=}")
+                        # print(f"I collided with bottom of {item[0]=}")
                     elif (self.rect.bottom, self.rect.x) == (item[0].top, x+item[0].x) and self.speed_y > 0: # (y, x)
                         self.speed_y *= -1
                         self.collision['y'] = True
-                        print(f"I collided with top of {item[0]=}")
+                        # print(f"I collided with top of {item[0]=}")
                 for y in range(item[0].height): # check 
                     if (self.rect.y, self.rect.right) == (y+item[0].y, item[0].left) and self.speed_x > 0:
                         self.speed_x *= -1
                         self.collision['x'] = True
-                        print(f"I collided with left of {item[0]=}")
+                        # print(f"I collided with left of {item[0]=}")
                     elif (self.rect.y, self.rect.left) == (y+item[0].y, item[0].right) and self.speed_x < 0:
                         self.speed_x *= -1
                         self.collision['x'] = True
-                        print(f"I collided with right of {item[0]=}")
+                        # print(f"I collided with right of {item[0]=}")
 
                 # handle item interaction on collision
                 if self.collision['x'] or self.collision['y']:
@@ -220,20 +220,18 @@ class ball_class():
             if self.speed_y > 0:
                 print(f"I am colliding with the movingbar at {self.rect.x, self.rect.y} :))")
                 self.speed_y = -abs(self.speed_y)
-                self.speed_x -= movingbar.direction
+
+                self.speed_x -= movingbar.direction*2
+                if self.speed_x == 0: # direction reversal
+                    print(f"{self.speed_x} + {movingbar.direction} = 0")
+                    self.speed_x = -movingbar.direction*2
+                    print(f"so setting new {self.speed_x=}\n")
+                elif self.speed_x >= self.speed_max or self.speed_x <= -self.speed_max: # too high speed
+                    print(f"Speed is way too insane... slow down")
+                    self.speed_x = self.speed_max-2
+                
                 print(f"{self.speed_x+movingbar.direction} => {self.speed_x}")
                 self.collision['movingbar'] = True
-
-                # +5 ball
-                # -1 movingbar direction
-                # 
-                if self.speed_x > self.speed_max:
-                    self.speed_x = self.speed_max
-                elif self.speed_x < 1:
-                    if self.speed_x > -self.speed_max:
-                        self.speed_x = -self.speed_max
-                    else:
-                        self.speed_x = -movingbar.direction
                 
     def move(self, move_x, move_y):
         if move_x and not self.collision['movingbar']:
@@ -252,7 +250,7 @@ class ball_class():
         self.rect = pygame.Rect(self.x, self.y, 1, 1)
         self.speed_x = 4 # speed is frame count at which x or y will be moved
         self.speed_y = -10 # and also the direction in which it will be moved at the frame count
-        self.speed_max = 8
+        self.speed_max = 10
         self.collision = {'x':False, 'y':False, 'item':True, 'movingbar':False}
         self.game_paused = False
         self.lives = lives
@@ -334,7 +332,7 @@ while 1: # outer game loop
     framecounter = 0 # for operations that happen every n frame
     # main game loop
     while not ball.game_over:
-        clock.tick(40) # fps the game runs at
+        clock.tick(46) # fps the game runs at
 
         # game pause functionality
         if ball.game_paused:
@@ -349,7 +347,7 @@ while 1: # outer game loop
         # ball movement through framecounter logic
         framecounter += 1
         move_y = (framecounter-1) % abs(ball.speed_y) and not (framecounter % abs(ball.speed_y))
-        move_x = (framecounter-1) % abs(ball.speed_x) and not (framecounter % abs(ball.speed_x)) and not move_y
+        move_x = (framecounter-1) % abs(ball.speed_max - abs(ball.speed_x)) and not (framecounter % abs(ball.speed_max - abs(ball.speed_x))) and not move_y
         ball.prime_move()
         ball.move(move_x, move_y)
 
