@@ -297,7 +297,7 @@ class level_selection_class():
         else:
             self.selected_level += k
 
-        self.y = 5 + 6 * int(self.selected_level//4) # WHY DOES THIS NEED AN INT CONVERSION???!?
+        self.y = 5 + 7 * int(self.selected_level//4) # WHY DOES THIS NEED AN INT CONVERSION???!?
         # print(f"5 + 6 * {self.selected_level//4} = {self.y}")
         self.draw()
     
