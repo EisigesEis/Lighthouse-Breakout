@@ -20,7 +20,7 @@
 
 from pyghthouse import Pyghthouse, VerbosityLevel
 from login import username, token
-from breakout_data import levelmap, callback
+from breakout_data import levelmap, callback, finish_screen
 
 import pygame
 from pygame.locals import *
@@ -228,7 +228,7 @@ class ball_class():
                     print(f"so setting new {self.speed_x=}\n")
                 elif self.speed_x >= self.speed_max or self.speed_x <= -self.speed_max: # too high speed
                     print(f"Speed is way too insane... slow down")
-                    self.speed_x = self.speed_max-2
+                    self.speed_x = self.speed_max * self.speed_x / abs(self.speed_x) - 2
                 
                 print(f"{self.speed_x+movingbar.direction} => {self.speed_x}")
                 self.collision['movingbar'] = True
@@ -358,5 +358,13 @@ while 1: # outer game loop
         draw_board()
 
     keyboard.unhook_all()
-    if ball.game_over > 0: print("You won!")
-    if ball.game_over < 0: print("You lost!")
+    # display finish screen
+    if ball.game_over > 0: # WIN
+        p.set_image([[218,165,32] if int(x) else [0,0,0] for string in finish_screen[ball.game_over] for x in string])
+        if ball.game_over > 0: print("You won!")
+    else: # LOSS
+        p.set_image([[220,20,60] if int(x) else [0,0,0] for string in finish_screen[ball.game_over] for x in string])
+        if ball.game_over < 0: print("You lost!")
+    sleep(5)
+    
+    
