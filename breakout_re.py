@@ -210,7 +210,7 @@ class ball_class():
             if not self.lives:
                 self.game_over = -1
             else:
-                self.reset(movingbar.x + (int(movingbar.width / 2)), movingbar.y - movingbar.height, self.lives)
+                self.reset(movingbar.rect.x + (int(movingbar.width / 2)), movingbar.rect.y - movingbar.height, self.lives)
                 draw_board()
                 keyboard.wait('up')
 
@@ -224,12 +224,16 @@ class ball_class():
                 print(f"{self.speed_x+movingbar.direction} => {self.speed_x}")
                 self.collision['movingbar'] = True
 
+                # +5 ball
+                # -1 movingbar direction
+                # 
                 if self.speed_x > self.speed_max:
                     self.speed_x = self.speed_max
-                elif self.speed_x < 0 and self.speed_x > -self.speed_max:
-                    self.speed_x = -self.speed_max
-                elif not self.speed_x:
-                    self.speed_x = -movingbar.direction
+                elif self.speed_x < 1:
+                    if self.speed_x > -self.speed_max:
+                        self.speed_x = -self.speed_max
+                    else:
+                        self.speed_x = -movingbar.direction
                 
     def move(self, move_x, move_y):
         if move_x and not self.collision['movingbar']:
@@ -334,8 +338,13 @@ while 1: # outer game loop
 
         # game pause functionality
         if ball.game_paused:
+            keyboard.unhook_all()
             keyboard.wait('up')
             ball.pause_game()
+            keyboard.add_hotkey('right', lambda: movingbar.move(1))
+            keyboard.add_hotkey('left', lambda: movingbar.move(-1))
+            keyboard.add_hotkey('down', lambda: ball.pause_game())
+            sleep(0.01)
 
         # ball movement through framecounter logic
         framecounter += 1
