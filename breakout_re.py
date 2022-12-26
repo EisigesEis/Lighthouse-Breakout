@@ -50,7 +50,7 @@ colors = {
     "ball":[220, 220, 220]
 }
 
-class wall():
+class wall_class():
     def __init__(self):
         self.width = 2
         self.height = 2
@@ -110,7 +110,7 @@ class wall():
                             # print(f"item ({y}, {x}): {colors['item'][item[1]-1]=}")
                             self.img[y][x] = colors["block"][item[1]-1]
 
-class movingbar():
+class movingbar_class():
     def __init__(self):
         self.reset()
     
@@ -135,9 +135,9 @@ class movingbar():
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
         self.direction = 0
 
-class ball():
-    def __init__(self, x, y):
-        self.reset(x, y)
+class ball_class():
+    def __init__(self, x, y, lives):
+        self.reset(x, y, lives)
     
     def draw(self, img):
         # print(f"Ball in {self.rect.y} {self.rect.x}")
@@ -182,13 +182,14 @@ class ball():
 
                 # handle item interaction on collision
                 if self.collision['x'] or self.collision['y']:
-                    wall.collision = True
+                    self.collision['item'] = True
                     if item[1]:
                         item[1] -= 1
                 self.collision['x'] = False
                 self.collision['y'] = False
                 # determine if item still has health
                 if not wall_alive and item[1]: wall_alive = True
+        if not wall_alive: self.game_over = 1; return
 
         # handle collision with side walls
         if self.rect.left <= 0:
@@ -203,8 +204,15 @@ class ball():
         # handle collision with void (bottom)
         if self.rect.bottom >= screen_height:
             # print("I fell off of the map.")
-            self.speed_y = -abs(self.speed_y)
-            keyboard.wait()
+            sleep(0.2)
+            self.lives -= 1
+            print(f"{self.lives=}")
+            if not self.lives:
+                self.game_over = -1
+            else:
+                self.reset(movingbar.x + (int(movingbar.width / 2)), movingbar.y - movingbar.height, self.lives)
+                draw_board()
+                keyboard.wait('up')
 
         # handle collision with movingbar
         if self.rect.colliderect(movingbar.rect):
@@ -231,7 +239,7 @@ class ball():
             self.rect.y += int(move_y * self.speed_y / abs(self.speed_y))
             self.collision['movingbar'] = False
     
-    def reset(self, x, y):
+    def reset(self, x, y, lives):
         # self.ball_rad = 1
         # self.x = x - self.ball_rad
         # self.y = y - self.ball_rad
@@ -240,35 +248,74 @@ class ball():
         self.rect = pygame.Rect(self.x, self.y, 1, 1)
         self.speed_x = 4 # speed is frame count at which x or y will be moved
         self.speed_y = -10 # and also the direction in which it will be moved at the frame count
-        self.speed_max = 6
-        self.collision = {'x':False, 'y':False, 'movingbar':False}
+        self.speed_max = 8
+        self.collision = {'x':False, 'y':False, 'item':True, 'movingbar':False}
+        self.game_paused = False
+        self.lives = lives
         self.game_over = 0
         # print(f"Ball in {self.y} {self.x}")
+
+    def pause_game(self):
+        self.game_paused = not self.game_paused
+
+class level_selection_class():
+    def __init__(self):
+        self.max_len = len(levelmap.keys())-1
+        self.selected_level = 0
+        self.width = 4
+        self.y = 5
+        self.callback_img = [[255,255,255] if int(x) else [0,0,0] for string in callback for x in string]
+        self.draw()
+    
+    def select(self, k):
+        if self.selected_level + k < 0:
+            self.selected_level = 0
+        elif self.selected_level + k > self.max_len:
+            self.selected_level = self.max_len
+        else:
+            self.selected_level += k
+
+        self.draw()
+    
+    def confirm(self):
+        self.y -= 1
+        self.draw()
+    
+    def draw(self):
+        next_img = self.callback_img[:]
+        for x in range(self.width):
+            next_img[self.y*28 + self.selected_level*(2+self.width) + x + 2] = colors["movingbar"]
+        p.set_image(next_img)
+        
+def draw_board():
+    wall.update_img()
+    img = wall.img[:]
+    img = movingbar.draw(img)
+    img = ball.draw(img)
+    p.set_image(img)
 
 # initialize pyghthouse
 p = Pyghthouse(username, token, verbosity=VerbosityLevel)
 p.start()
-callback_img = [[255,255,255] if int(x) else [0,0,0] for string in callback for x in string]
-p.set_image(callback_img)
+keyboard.add_hotkey('shift', lambda: p.close())
 
-while 1:
-    levelmap_keys = "".join([f"{key}, " for key in levelmap])
-    level = input(f"Which level do you want to play?\nPossible choices: {levelmap_keys}\n")
-    while not level in levelmap.keys(): level = input("Invalid level. Input a valid one:\n")
 
+while 1: # outer game loop
+    # level selection animations
+    selector = level_selection_class()
+    keyboard.add_hotkey('left', lambda: selector.select(-1))
+    keyboard.add_hotkey('right', lambda: selector.select(1))
+    keyboard.wait('up'); selector.confirm(); keyboard.unhook_all(); sleep(0.4)
+    
     # create board
-    wall = wall()
-    wall.create(levelmap[level])
+    wall = wall_class()
+    wall.create(levelmap[[key for key in levelmap.keys()][selector.selected_level]])
     wall.update_img()
-    movingbar = movingbar()
-    ball = ball(movingbar.x + (int(movingbar.width / 2)), movingbar.y - movingbar.height)
+    movingbar = movingbar_class()
+    ball = ball_class(movingbar.x + (int(movingbar.width / 2)), movingbar.y - movingbar.height, 3)
 
     # draw board
-    wall.update_img()
-    img = wall.img
-    img = movingbar.draw(img)
-    img = ball.draw(img)
-    p.set_image(img)
+    draw_board()
 
     # wait for player to start
     print("\nLevel has been loaded! Press up to begin.")
@@ -277,12 +324,18 @@ while 1:
     # add hotkey listeners
     keyboard.add_hotkey('right', lambda: movingbar.move(1))
     keyboard.add_hotkey('left', lambda: movingbar.move(-1))
+    keyboard.add_hotkey('down', lambda: ball.pause_game())
 
 
     framecounter = 0 # for operations that happen every n frame
-    # general game loop
-    while 1:
-        clock.tick(40) # game runs at 60fps
+    # main game loop
+    while not ball.game_over:
+        clock.tick(40) # fps the game runs at
+
+        # game pause functionality
+        if ball.game_paused:
+            keyboard.wait('up')
+            ball.pause_game()
 
         # ball movement through framecounter logic
         framecounter += 1
@@ -292,16 +345,11 @@ while 1:
         ball.move(move_x, move_y)
 
         if framecounter == abs(ball.speed_y): framecounter = 0
-
-        # update board on collision
-        wall.update_img()
         
         # draw board
-        img = wall.img
-        img = movingbar.draw(img)
-        img = ball.draw(img)
-
-        p.set_image(img)
+        # if ball.collision['item']: wall.update_img(); ball.collision['item'] = False #conditional drawing leads to ball trace
+        draw_board()
 
     keyboard.unhook_all()
-
+    if ball.game_over > 0: print("You won!")
+    if ball.game_over < 0: print("You lost!")
