@@ -1,13 +1,20 @@
+#Usage Guide:
+# Level Selection:
+# - Press {Left Arrow} and {Right Arrow} key to select a level with the grey bar.
+# - Press {Up Arrow} to confirm your selection.
+# In-Game:
+# - Destroy all blocks with the ball to win the round. If your ball hits the bottom,
+#   you lose a life. You have a total of 3 lives.
+# - When the ball is above your grey bar, press {Up Arrow} to initiate movement.
+# - Press {Left Arrow} and {Right Arrow} to move the grey bar.
+# - Press {Down Arrow} to pause the game. Then press {Up Arrow} to resume.
+
 # To-Do:
 # Unskippable Tasks:
-# - Remove ball staggering when colliding with movingbar or block
-# - Add more effect from movingbar.direction towards ball movement
-#   (allow increase and direction switch while still touching instead of frameskip?)
-# - Only call wall.update_img() when block collision happened
+# - Only call wall.update_img() when block collision happened (causes ball trace for some reason, even with value declaration of new img)
 
 # Relevant Tasks:
 # - Add functionality for special blocks (grey, fire, de-buff, buff)
-# - Add replayability without restarting client (use set_image_callback perhaps? a runner maybe too)
 # - Add more Levels and difficulty setting
 
 # Look-Ahead Collision:
@@ -16,7 +23,6 @@
 
 # minor:
 # (- Implement own FPS Clock)
-# (- Implement own Rect and Colliderect)
 
 from pyghthouse import Pyghthouse, VerbosityLevel
 from login import username, token
@@ -41,10 +47,10 @@ colors = {
         [242, 85, 96], # red
         [86, 174, 87], # green
         [69, 177, 232], # blue
-        [255, 255, 255], # grey (unbreakable)
         [], # fire (exploding)
         [], # de-buff
-        [] # buff
+        [], # buff
+        [162, 155, 143], # grey (unbreakable)
     ],
     "movingbar":[142, 135, 123],
     "ball":[220, 220, 220]
@@ -119,6 +125,15 @@ class movingbar_class():
             # print(f"move {self.x} to {self.x+x} is valid")
             self.rect.x += direction
             self.direction = direction
+            if ball.collision['movingbar']:
+                ball.speed_x += self.direction*2
+                if ball.speed_x == 0: # direction reversal
+                    print(f"{ball.speed_x} + {self.direction} = 0")
+                    ball.speed_x = self.direction*2
+                    print(f"so setting new {ball.speed_x=}\n")
+                elif ball.speed_x >= ball.speed_max or ball.speed_x <= -ball.speed_max: # too high speed
+                    print(f"Speed is way too insane... slow down")
+                    ball.speed_x = ball.speed_max * ball.speed_x / abs(ball.speed_x) - 2
     
     def draw(self, img):
         for x in range(self.rect.x, self.rect.x + self.width):
@@ -181,14 +196,16 @@ class ball_class():
                         # print(f"I collided with right of {item[0]=}")
 
                 # handle item interaction on collision
-                if self.collision['x'] or self.collision['y']:
-                    self.collision['item'] = True
-                    if item[1]:
-                        item[1] -= 1
+                if not item[1] == 7: # inspecting a breakable item
+                    if self.collision['x'] or self.collision['y']:
+                        self.collision['item'] = True
+                        if item[1]:
+                            item[1] -= 1
+                    # determine if item still has health
+                    if not wall_alive and item[1]: wall_alive = True
                 self.collision['x'] = False
                 self.collision['y'] = False
-                # determine if item still has health
-                if not wall_alive and item[1]: wall_alive = True
+
         if not wall_alive: self.game_over = 1; return
 
         # handle collision with side walls
@@ -231,15 +248,6 @@ class ball_class():
             if self.speed_y > 0:
                 print(f"I am colliding with the movingbar at {self.rect.x, self.rect.y} :))")
                 self.speed_y = -abs(self.speed_y)
-
-                self.speed_x -= movingbar.direction*2
-                if self.speed_x == 0: # direction reversal
-                    print(f"{self.speed_x} + {movingbar.direction} = 0")
-                    self.speed_x = -movingbar.direction*2
-                    print(f"so setting new {self.speed_x=}\n")
-                elif self.speed_x >= self.speed_max or self.speed_x <= -self.speed_max: # too high speed
-                    print(f"Speed is way too insane... slow down")
-                    self.speed_x = self.speed_max * self.speed_x / abs(self.speed_x) - 2
                 
                 print(f"{self.speed_x+movingbar.direction} => {self.speed_x}")
                 self.collision['movingbar'] = True
@@ -376,4 +384,4 @@ while 1: # outer game loop
     else: # LOSS
         p.set_image([[220,20,60] if int(x) else [0,0,0] for string in finish_screen[ball.game_over] for x in string])
         if ball.game_over < 0: print("You lost!")
-    sleep(5)
+    sleep(5.3)
