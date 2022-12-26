@@ -133,7 +133,7 @@ class movingbar_class():
                     print(f"so setting new {ball.speed_x=}\n")
                 elif ball.speed_x >= ball.speed_max or ball.speed_x <= -ball.speed_max: # too high speed
                     print(f"Speed is way too insane... slow down")
-                    ball.speed_x = ball.speed_max * ball.speed_x / abs(ball.speed_x) - 2
+                    ball.speed_x = ball.speed_max * int(ball.speed_x / abs(ball.speed_x)) - 2
     
     def draw(self, img):
         for x in range(self.rect.x, self.rect.x + self.width):
