@@ -212,6 +212,17 @@ class ball_class():
             else:
                 self.reset(movingbar.rect.x + (int(movingbar.width / 2)), movingbar.rect.y - movingbar.height, self.lives)
                 draw_board()
+                # draw life bar
+                img = p.get_image()
+                for y in range(11, 14):
+                    for x in range(5):
+                        img[y][x] = [50,50,50]
+                for x in range(3):
+                    if self.lives > x:
+                        img[12][x+1] = [255,255,255]
+                    else:
+                        img[12][x+1] = [220,20,60]
+                p.set_image(img)
                 keyboard.wait('up')
 
         # handle collision with movingbar
@@ -366,5 +377,3 @@ while 1: # outer game loop
         p.set_image([[220,20,60] if int(x) else [0,0,0] for string in finish_screen[ball.game_over] for x in string])
         if ball.game_over < 0: print("You lost!")
     sleep(5)
-    
-    
