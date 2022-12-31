@@ -11,10 +11,12 @@
 
 # To-Do:
 # Unskippable Tasks:
+# - Make fire and ice blocks work with framecount logic
 # - Only call wall.update_img() when block collision happened (causes ball trace for some reason, even with value declaration of new img)
+# - Optimize keybind hold-down recognition
 
 # Relevant Tasks:
-# - Add functionality for special blocks (grey, fire, de-buff, buff)
+# - Add functionality for special blocks
 # - Add more Levels and difficulty setting
 
 # Look-Ahead Collision:
@@ -22,7 +24,7 @@
 # - Check if ball collides when speed is applied, not when ball already collided
 
 # minor:
-# ball color turns grey on high speed
+# - ball color turns grey on high speed
 # (- Implement own FPS Clock)
 
 from pyghthouse import Pyghthouse, VerbosityLevel
@@ -48,9 +50,11 @@ colors = {
         [242, 85, 96], # red
         [86, 174, 87], # green
         [69, 177, 232], # blue
-        [], # fire (exploding)
-        [], # de-buff
+        [242, 125, 12], # fire (speeds up ball.speed_x and .speed_y and .max_speed_x)
+        [200, 233, 233], # ice (slows down ball.speed_x .speed_y and .max_speed_x)
+        [128, 9, 9], # de-buff
         [], # buff
+        [], # bomb (exploding)
         [162, 155, 143], # grey (unbreakable)
     ],
     "movingbar":[142, 135, 123],
@@ -81,30 +85,21 @@ class wall_class():
                     # 1 = red (strength 1)
                     # 2 = green (strength 2)
                     # 3 = blue (strength 3)
-                    # 4 = grey (unbreakable)
-                    # 5 = fire (exploding)
+                    # 4 = fire (ball speed-up)
+                    # 5 = ice (ball slow-down)
                     # 6 = de-buff
                     # 7 = buff
+                    # 8 = bomb (exploding)
+                    # 9 = grey (unbreakable)
 
                     block_individual = [rect, identity]
 
                     block_row.append(block_individual)
             self.blocks.append(block_row)
         # print(self.blocks)
-        
-    def draw(self): # deprecated
-        for row in self.blocks:
-            for block in row:
-                if item[0]:
-                    # print(f"coloring for {item[0]=}")
-                    for y in range(item[0].y, item[0].y + item[0].height):
-                        for x in range(item[0].x, item[0].x + item[0].width):
-                            # print(f"item ({y}, {x}): {colors['item'][item[1]-1]=}")
-                            self.img[y][x] = colors["block"][item[1]-1]
 
     def update_img(self):
         self.img = np.zeros((14, 28, 3)).tolist()
-        # print(self.blocks)
 
         for row in self.blocks:
             # print(f"checking {row=}")
@@ -197,12 +192,25 @@ class ball_class():
                         # print(f"I collided with right of {item[0]=}")
 
                 # handle item interaction on collision
-                if not item[1] == 7: # inspecting a breakable item
+                if not item[1] == 9: # inspecting a breakable item
                     if self.collision['x'] or self.collision['y']:
                         self.collision['item'] = True
-                        if item[1]:
+                        if item[1] > 3: # inspecting a one-time use item
+                            if item[1] < 6: # inspecting either ice or fire
+                                # multiplier = 2 if item[1]-4 else 0.5
+                                # ball.speed_max = int(ball.speed_max * multiplier)
+                                # ball.speed_x = int(ball.speed_x + multiplier)
+                                # ball.speed_y = int(ball.speed_y * multiplier)
+                                sign = int(ball.speed_x/abs(ball.speed_x))
+                                addition = 2 if item[1]-5 else -2
+                                # ball.speed_max += addition*2
+                                # ball.speed_x = ball.speed_max*sign if item[1]-5 else 4
+                                # ball.speed_y += addition
+                            
+                            item[1] = 0
+                        elif item[1]: # inspecting strength-based block
                             item[1] -= 1
-                    # determine if item still has health
+                    # wall still has health if breakable item has health
                     if not wall_alive and item[1]: wall_alive = True
                 self.collision['x'] = False
                 self.collision['y'] = False
@@ -247,10 +255,10 @@ class ball_class():
         if self.rect.colliderect(movingbar.rect):
             # check if colliding from the top
             if self.speed_y > 0:
-                print(f"I am colliding with the movingbar at {self.rect.x, self.rect.y} :))")
+                # print(f"I am colliding with the movingbar at {self.rect.x, self.rect.y} :))")
                 self.speed_y = -abs(self.speed_y)
                 
-                print(f"{self.speed_x+movingbar.direction} => {self.speed_x}")
+                # print(f"{self.speed_x+movingbar.direction} => {self.speed_x}")
                 self.collision['movingbar'] = True
                 
     def move(self, move_x, move_y):
