@@ -63,7 +63,7 @@ colors = {
     "ball":[220, 220, 220]
 }
 
-class wall_class():
+class Wall():
     def __init__(self):
         self.width = 2
         self.height = 2
@@ -109,7 +109,7 @@ class wall_class():
                         for x in range(item[0].x, item[0].x + item[0].width):
                             self.img[y][x] = colors["block"][item[1]-1]
 
-class movingbar_class():
+class Movingbar():
     def __init__(self):
         self.reset()
     
@@ -140,7 +140,7 @@ class movingbar_class():
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
         self.direction = 0
 
-class ball_class():
+class Ball():
     def __init__(self, x, y, lives):
         self.reset(x, y, lives)
     
@@ -188,17 +188,15 @@ class ball_class():
                         self.collision['item'] = True
                         if item[1] > 3: # inspecting a one-time use item
                             if item[1] < 6: # inspecting either ice or fire
-                                # multiplier = 2 if item[1]-4 else 0.5
-                                # ball.speed_max = int(ball.speed_max * multiplier)
-                                # ball.speed_x = int(ball.speed_x + multiplier)
-                                # ball.speed_y = int(ball.speed_y * multiplier)
-                                sign = int(ball.speed_x/abs(ball.speed_x))
                                 addition = 2 if item[1]-5 else -2
-                                # ball.speed_max += addition*2
-                                # ball.speed_x = ball.speed_max*sign if item[1]-5 else 4
-                                # ball.speed_y += addition
+                                ball.speed_x -= addition
+                                ball.speed_max -= addition*2
+                                ball.speed_y += addition*2
+                                if ball.speed_x == 0:
+                                    ball.speed_x = -addition
+                                # sign = int(ball.speed_x/abs(ball.speed_x))
                             
-                            item[1] = 0
+                            item[1] = 0 # item was one-time use, so destruct item
                         elif item[1]: # inspecting strength-based block
                             item[1] -= 1
                     # wall still has health if breakable item has health
@@ -273,7 +271,7 @@ class ball_class():
     def pause_game(self):
         self.game_paused = not self.game_paused
 
-class level_selection_class():
+class Level_Selection():
     def __init__(self):
         self.max_len = len(levelmap.keys())-1
         self.selected_level = 0
@@ -323,17 +321,17 @@ keyboard.add_hotkey('shift', lambda: delete_session())
 
 while 1: # outer game loop
     # level selection animations
-    selector = level_selection_class()
+    selector = Level_Selection()
     keyboard.add_hotkey('a', lambda: selector.select(-1))
     keyboard.add_hotkey('d', lambda: selector.select(1))
     keyboard.wait('w'); selector.confirm(); keyboard.unhook_all(); sleep(0.4)
     
     # create board
-    wall = wall_class()
+    wall = Wall()
     wall.create(levelmap[[key for key in levelmap.keys()][selector.selected_level]])
     wall.update_img()
-    movingbar = movingbar_class()
-    ball = ball_class(movingbar.x + (int(movingbar.width / 2)), movingbar.y - movingbar.height, 3)
+    movingbar = Movingbar()
+    ball = Ball(movingbar.x + (int(movingbar.width / 2)), movingbar.y - movingbar.height, 3)
 
     # draw board
     draw_board()
@@ -364,12 +362,12 @@ while 1: # outer game loop
             keyboard.unhook_all()
             keyboard.wait('w')
             ball.pause_game()
+            sleep(0.01)
             keyboard.add_hotkey('d', lambda: movingbar.move(1))
             keyboard.add_hotkey('a', lambda: movingbar.move(-1))
             keyboard.add_hotkey('s', lambda: ball.pause_game())
-            sleep(0.01)
 
-        # ball movement through framecounter logic
+        # ball movement through framecount logic
         framecounter += 1
         move_y = (framecounter-1) % abs(ball.speed_y) and not (framecounter % abs(ball.speed_y))
         move_x = (framecounter-1) % abs(ball.speed_max - abs(ball.speed_x)) and not (framecounter % abs(ball.speed_max - abs(ball.speed_x))) and not move_y
