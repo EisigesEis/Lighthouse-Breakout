@@ -313,7 +313,12 @@ def draw_board():
 # initialize pyghthouse
 p = Pyghthouse(username, token, verbosity=VerbosityLevel, frame_rate=fps)
 p.start()
-keyboard.add_hotkey('shift', lambda: p.close())
+
+def delete_session():
+    p.close()
+    sleep(4)
+    quit()
+keyboard.add_hotkey('shift', lambda: delete_session())
 
 
 while 1: # outer game loop
