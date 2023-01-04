@@ -26,7 +26,7 @@
 # - Check if ball collides when speed is applied, not when ball already collided
 
 # minor:
-# - ball color turns grey on high speed (hardly reachable with current speed levels)
+# - ball color turns grey on impact with unbreakable block or high speed (hardly reachable with current speed levels)
 # (- Implement own FPS Clock)
 
 from pyghthouse import Pyghthouse, VerbosityLevel
@@ -57,7 +57,7 @@ colors = {
         [128, 9, 9], # de-buff
         [0, 255, 0], # buff
         [75, 0, 130], # bomb (exploding)
-        [162, 155, 143], # grey (unbreakable)
+        [142, 135, 124], # grey (unbreakable)
     ],
     "movingbar":[142, 135, 123],
     "ball":[220, 220, 220]
@@ -382,7 +382,7 @@ while 1: # outer game loop
 
     keyboard.unhook_all()
     # display finish screen
-    sleep(1)
+    sleep(0.4)
     if ball.game_over > 0: # WIN
         p.set_image([[218,165,32] if int(x) else [0,0,0] for string in finish_screen[ball.game_over] for x in string])
         if ball.game_over > 0: print("You won!")
