@@ -1,31 +1,44 @@
 #SingleInstance force
 #NoEnv
 #IfWinActive ahk_exe firefox.exe
-; A cheap workaround to the problems faced trying to register key holds
+; workaround to the problems faced trying to register key holds
 ; RunWait, "breakout_re.py"
 
-$Left::
-    while GetKeyState("Left","P")
+j::
+    while GetKeyState("j","P")
     {
         Send {a}
         sleep 1
     }
 Return
 
-$Right::
-    while GetKeyState("Right","P")
+l::
+    while GetKeyState("l","P")
     {
         Send {d}
         Sleep 1
     }
 Return
 
-$Up::
+i::
     Send {w}
 Return
 
-$Down::
+k::
     Send {s}
 Return
 
-~LCtrl::Reload ; for some reason keypresses are only registered after reload
+SC027:: ; => ö
+    ; Run a game session
+    Reload
+Return
+
+SC028:: ; => ä
+    Suspend, Toggle
+Return
+
+SC01A:: ; => ü
+    ; Kill all opened cmd sessions
+Return
+
+SC00C::Reload ; => ß
