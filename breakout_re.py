@@ -7,6 +7,8 @@
 #   you lose a life. You have a total of 3 lives.
 # - When the ball is above your grey bar, press {Up Arrow} to initiate movement.
 # - Press {Left Arrow} and {Right Arrow} to move the grey bar.
+#   When the ball is touching the grey bar (dark red indication),
+#   you can inflict momentum on the ball by moving the bar.
 # - Press {Down Arrow} to pause the game. Then press {Up Arrow} to resume.
 
 # To-Do:
@@ -14,7 +16,6 @@
 # - With higher max speed facing illogical physics (prob. something with framecount logic and speed_x being higher than speed_y => frame skipping) and no x movement (x movement being within frames skipped)
 # - Make fire and ice blocks stable with framecount logic
 # - Only call wall.update_img() when block collision happened (causes ball trace for some reason, even with value declaration of new img)
-# - Optimize keybind hold-down recognition
 
 # Relevant Tasks:
 # - Add functionality for special blocks
@@ -28,6 +29,7 @@
 # minor:
 # - ball color turns grey on impact with unbreakable block or high speed (hardly reachable with current speed levels)
 # (- Implement own FPS Clock)
+# (- Optimize keybind hold-down recognition) <- workaround using autohotkey
 
 from pyghthouse import Pyghthouse, VerbosityLevel
 from login import username, token
