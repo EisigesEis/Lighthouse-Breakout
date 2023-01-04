@@ -2,3 +2,6 @@ login.py
 __pycache__
 pygame-collision-test.py
 input_reg.py
+
+pynput-test-1.py
+pynput-test-2.py
