@@ -36,7 +36,7 @@ from pygame.locals import *
 
 import numpy as np
 import keyboard
-from time import sleep
+from time import sleep, time
 
 # define game variables
 screen_width = 28
@@ -121,12 +121,14 @@ class movingbar_class():
             # print(f"move {self.x} to {self.x+x} is valid")
             self.rect.x += direction
             self.direction = direction
+
+            # ball collision logic
             if ball.collision['movingbar']:
                 ball.speed_x += self.direction*2
                 if ball.speed_x == 0: # direction reversal
-                    print(f"{ball.speed_x} + {self.direction} = 0")
+                    print(f"{ball.speed_x=}")
                     ball.speed_x = self.direction*2
-                    print(f"so setting new {ball.speed_x=}\n")
+                    print(f"reversal, so setting new {ball.speed_x=}\n")
                 elif ball.speed_x >= ball.speed_max or ball.speed_x <= -ball.speed_max: # too high speed
                     print(f"Speed is way too insane... slow down")
                     ball.speed_x = ball.speed_max * int(ball.speed_x / abs(ball.speed_x)) - 2
@@ -249,7 +251,7 @@ class ball_class():
                     else:
                         img[1][x+1] = [220,20,60]
                 p.set_image(img)
-                keyboard.wait('up')
+                keyboard.wait('w')
 
         # handle collision with movingbar
         if self.rect.colliderect(movingbar.rect):
@@ -335,9 +337,9 @@ keyboard.add_hotkey('shift', lambda: p.close())
 while 1: # outer game loop
     # level selection animations
     selector = level_selection_class()
-    keyboard.add_hotkey('left', lambda: selector.select(-1))
-    keyboard.add_hotkey('right', lambda: selector.select(1))
-    keyboard.wait('up'); selector.confirm(); keyboard.unhook_all(); sleep(0.4)
+    keyboard.add_hotkey('a', lambda: selector.select(-1))
+    keyboard.add_hotkey('d', lambda: selector.select(1))
+    keyboard.wait('w'); selector.confirm(); keyboard.unhook_all(); sleep(0.4)
     
     # create board
     wall = wall_class()
@@ -351,27 +353,33 @@ while 1: # outer game loop
 
     # wait for player to start
     print("\nLevel has been loaded! Press up to begin.")
-    keyboard.wait('up') # give the paddle a ball start and a reset animation :D
+    keyboard.wait('w') # give the paddle a ball start and a reset animation :D
 
     # add hotkey listeners
-    keyboard.add_hotkey('right', lambda: movingbar.move(1))
-    keyboard.add_hotkey('left', lambda: movingbar.move(-1))
-    keyboard.add_hotkey('down', lambda: ball.pause_game())
-
+    keyboard.add_hotkey('d', lambda: movingbar.move(1))
+    keyboard.add_hotkey('a', lambda: movingbar.move(-1))
+    keyboard.add_hotkey('s', lambda: ball.pause_game())
 
     framecounter = 0 # for operations that happen every n frame
     # main game loop
     while not ball.game_over:
+        # startTime = time()
+        # key = keyboard.read_key()
+        # print(time() - startTime)
+        # if key == "left":
+        #     movingbar.move(-1)
+        # elif key == "right":
+        #     movingbar.move(1)
         clock.tick(46) # fps the game runs at
 
         # game pause functionality
         if ball.game_paused:
             keyboard.unhook_all()
-            keyboard.wait('up')
+            keyboard.wait('w')
             ball.pause_game()
-            keyboard.add_hotkey('right', lambda: movingbar.move(1))
-            keyboard.add_hotkey('left', lambda: movingbar.move(-1))
-            keyboard.add_hotkey('down', lambda: ball.pause_game())
+            keyboard.add_hotkey('d', lambda: movingbar.move(1))
+            keyboard.add_hotkey('a', lambda: movingbar.move(-1))
+            keyboard.add_hotkey('s', lambda: ball.pause_game())
             sleep(0.01)
 
         # ball movement through framecounter logic
