@@ -383,6 +383,7 @@ while 1: # outer game loop
     keyboard.unhook_all()
     # display finish screen
     if ball.game_over > 0: # WIN
+        sleep(0.25)
         p.set_image([[218,165,32] if int(x) else [0,0,0] for string in finish_screen[ball.game_over] for x in string])
         if ball.game_over > 0: print("You won!")
     else: # LOSS
