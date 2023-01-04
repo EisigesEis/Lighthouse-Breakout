@@ -311,7 +311,7 @@ def draw_board():
     p.set_image(img)
 
 # initialize pyghthouse
-p = Pyghthouse(username, token, verbosity=VerbosityLevel)
+p = Pyghthouse(username, token, verbosity=VerbosityLevel, frame_rate=fps)
 p.start()
 keyboard.add_hotkey('shift', lambda: p.close())
 
@@ -352,7 +352,7 @@ while 1: # outer game loop
         #     movingbar.move(-1)
         # elif key == "right":
         #     movingbar.move(1)
-        clock.tick(60) # fps the game runs at
+        clock.tick(fps) # ticks at fps the game runs at
 
         # game pause functionality
         if ball.game_paused:
