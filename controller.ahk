@@ -25,31 +25,31 @@ SC028:: ; => ä
     Suspend, Toggle
 Return
 
-disassembleCMD(PID)
-{
-    WinActivate, ahk_pid %PID%
-    Sleep 40
-    ; Send ^{c}
-    ; Sleep 40
-    ; ControlSend,, !{F4}, ahk_pid %v% ; inconsistent
-    ; Process, Close, %PID% ; inconsistent
-    ; WinClose, ahk_pid %PID% ; inconsistent?
-    Send !{F4}
-}
-
 SC01A:: ; => ü
     ; Kill all open game sessions
-    if sessionPIDs.MaxIndex() {
-        For k, v in sessionPIDs {
-            disassembleCMD(v)
+    MsgBox, 4356, Breakout Controller, Confirm attempt to close ALL active game sessions?
+    IfMsgBox Yes
+    {
+        if sessionPIDs.MaxIndex() {
+            For k, v in sessionPIDs {
+                WinClose, ahk_pid %PID%
+            }
+            sessionPIDs := []
+        } else {
+            MsgBox, 4356, Breakout Controller, No active sessions saved.`nClose all cmd.exe processes? ; 4+256+4096
+            IfMsgBox Yes
+            { ; close cmd logic from yeeswg - https://www.autohotkey.com/boards/viewtopic.php?t=38139
+                WinGet, vWinList, List, ahk_class ConsoleWindowClass
+                Loop, % vWinList
+                {
+                    hWnd := vWinList%A_Index%
+                    WinGetTitle, vWinTitle, % "ahk_id " hWnd
+                    MsgBox, 3,, "Close the following? `r`n" %vWinTitle%
+                    IfMsgBox, Yes
+                        WinClose, % "ahk_id " hWnd
+                }
+            }
         }
-        sessionPIDs := []
-    } else {
-        MsgBox, 4372, Breakout Controller, No active sessions saved.`nClose all cmd.exe processes? ; 4+16+256+4096
-        IfMsgBox Yes
-            while WinExist(ahk_exe cmd.exe)
-                WinGet, v, PID, ahk_exe cmd.exe
-                disassembleCMD(v)
     }
 Return
 
