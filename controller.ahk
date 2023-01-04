@@ -28,5 +28,4 @@ $Down::
     Send {s}
 Return
 
-; ~RShift::suspend
-; ~LCtrl::Reload
+~LCtrl::Reload ; for some reason keypresses are only registered after reload
