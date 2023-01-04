@@ -11,7 +11,7 @@
 
 # To-Do:
 # Unskippable Tasks:
-# - With higher max speed facing no x movement or illogical physics
+# - With higher max speed facing illogical physics (prob. something with framecount logic and speed_x being higher than speed_y => frame skipping) and no x movement (x movement being within frames skipped)
 # - Make fire and ice blocks work with framecount logic
 # - Only call wall.update_img() when block collision happened (causes ball trace for some reason, even with value declaration of new img)
 # - Optimize keybind hold-down recognition
@@ -153,7 +153,10 @@ class ball_class():
         else:
             x = self.rect.x
         
-        img[self.rect.y][x] = colors["ball"]
+        if self.collision["movingbar"]:
+            img[self.rect.y][x] = [128, 9, 9]
+        else:
+            img[self.rect.y][x] = colors["ball"]
         return img
 
     def prime_move(self):
@@ -349,7 +352,7 @@ while 1: # outer game loop
         #     movingbar.move(-1)
         # elif key == "right":
         #     movingbar.move(1)
-        clock.tick(46) # fps the game runs at
+        clock.tick(60) # fps the game runs at
 
         # game pause functionality
         if ball.game_paused:
