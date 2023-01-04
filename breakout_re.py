@@ -12,7 +12,7 @@
 # To-Do:
 # Unskippable Tasks:
 # - With higher max speed facing illogical physics (prob. something with framecount logic and speed_x being higher than speed_y => frame skipping) and no x movement (x movement being within frames skipped)
-# - Make fire and ice blocks work with framecount logic
+# - Make fire and ice blocks stable with framecount logic
 # - Only call wall.update_img() when block collision happened (causes ball trace for some reason, even with value declaration of new img)
 # - Optimize keybind hold-down recognition
 
@@ -55,8 +55,8 @@ colors = {
         [242, 125, 12], # fire (speeds up ball.speed_x and .speed_y and .max_speed_x)
         [200, 233, 233], # ice (slows down ball.speed_x .speed_y and .max_speed_x)
         [128, 9, 9], # de-buff
-        [], # buff
-        [], # bomb (exploding)
+        [0, 255, 0], # buff
+        [75, 0, 130], # bomb (exploding)
         [162, 155, 143], # grey (unbreakable)
     ],
     "movingbar":[142, 135, 123],
