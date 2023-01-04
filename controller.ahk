@@ -25,16 +25,32 @@ SC028:: ; => ä
     Suspend, Toggle
 Return
 
+disassembleCMD(PID)
+{
+    WinActivate, ahk_pid %PID%
+    Sleep 40
+    ; Send ^{c}
+    ; Sleep 40
+    ; ControlSend,, !{F4}, ahk_pid %v% ; inconsistent
+    ; Process, Close, %PID% ; inconsistent
+    ; WinClose, ahk_pid %PID% ; inconsistent?
+    Send !{F4}
+}
+
 SC01A:: ; => ü
     ; Kill all open game sessions
-    For k, v in sessionPIDs {
-        WinActivate, ahk_pid %v%
-        Sleep 40
-        Send ^{c}
-        ; ControlSend,, ^{c}, ahk_pid %v% ; inconsistent
-        Process, Close, %v%
+    if sessionPIDs.MaxIndex() {
+        For k, v in sessionPIDs {
+            disassembleCMD(v)
+        }
+        sessionPIDs := []
+    } else {
+        MsgBox, 4372, Breakout Controller, No active sessions saved.`nClose all cmd.exe processes? ; 4+16+256+4096
+        IfMsgBox Yes
+            while WinExist(ahk_exe cmd.exe)
+                WinGet, v, PID, ahk_exe cmd.exe
+                disassembleCMD(v)
     }
-    sessionPIDs := []
 Return
 
 SC00C::Reload ; => ß
