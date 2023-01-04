@@ -26,14 +26,15 @@ SC028:: ; => ä
 Return
 
 SC01A:: ; => ü
-    Send {LShift} ; end all active pyghthouse connections
-    
     ; Kill all open game sessions
     For k, v in sessionPIDs {
-        ControlSend,, ^{c}, ahk_pid %v%
-        Sleep 80
+        WinActivate, ahk_pid %v%
+        Sleep 40
+        Send ^{c}
+        ; ControlSend,, ^{c}, ahk_pid %v% ; inconsistent
         Process, Close, %v%
     }
+    sessionPIDs := []
 Return
 
 SC00C::Reload ; => ß
