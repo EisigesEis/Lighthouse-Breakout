@@ -1,6 +1,6 @@
 #SingleInstance force
 #NoEnv
-; #IfWinActive ahk_exe firefox.exe
+#IfWinActive ahk_exe firefox.exe
 ; A cheap workaround to the problems faced trying to register key holds
 ; RunWait, "breakout_re.py"
 
@@ -28,4 +28,5 @@ $Down::
     Send {s}
 Return
 
-~Shift::suspend
+; ~RShift::suspend
+; ~LCtrl::Reload

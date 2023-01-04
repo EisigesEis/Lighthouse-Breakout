@@ -11,12 +11,14 @@
 
 # To-Do:
 # Unskippable Tasks:
+# - With higher max speed facing no x movement or illogical physics
 # - Make fire and ice blocks work with framecount logic
 # - Only call wall.update_img() when block collision happened (causes ball trace for some reason, even with value declaration of new img)
 # - Optimize keybind hold-down recognition
 
 # Relevant Tasks:
 # - Add functionality for special blocks
+# - Add custom block build functionality (with width and height)
 # - Add more Levels and difficulty setting
 
 # Look-Ahead Collision:
@@ -24,7 +26,7 @@
 # - Check if ball collides when speed is applied, not when ball already collided
 
 # minor:
-# - ball color turns grey on high speed
+# - ball color turns grey on high speed (hardly reachable with current speed levels)
 # (- Implement own FPS Clock)
 
 from pyghthouse import Pyghthouse, VerbosityLevel
@@ -96,20 +98,15 @@ class wall_class():
 
                     block_row.append(block_individual)
             self.blocks.append(block_row)
-        # print(self.blocks)
 
     def update_img(self):
         self.img = np.zeros((14, 28, 3)).tolist()
 
         for row in self.blocks:
-            # print(f"checking {row=}")
             for item in row:
-                # print({f"-> checking {item=}"})
                 if item[1]:
-                    # print(f"coloring for {item[0]=}")
                     for y in range(item[0].y, item[0].y + item[0].width):
                         for x in range(item[0].x, item[0].x + item[0].width):
-                            # print(f"item ({y}, {x}): {colors['item'][item[1]-1]=}")
                             self.img[y][x] = colors["block"][item[1]-1]
 
 class movingbar_class():
@@ -118,7 +115,6 @@ class movingbar_class():
     
     def move(self, direction):
         if (0 <= self.rect.x + direction) and (self.rect.x + direction + self.width-1 <= screen_width-1): # move is within limits?
-            # print(f"move {self.x} to {self.x+x} is valid")
             self.rect.x += direction
             self.direction = direction
 
@@ -126,16 +122,12 @@ class movingbar_class():
             if ball.collision['movingbar']:
                 ball.speed_x += self.direction*2
                 if ball.speed_x == 0: # direction reversal
-                    print(f"{ball.speed_x=}")
                     ball.speed_x = self.direction*2
-                    print(f"reversal, so setting new {ball.speed_x=}\n")
-                elif ball.speed_x >= ball.speed_max or ball.speed_x <= -ball.speed_max: # too high speed
-                    print(f"Speed is way too insane... slow down")
-                    ball.speed_x = ball.speed_max * int(ball.speed_x / abs(ball.speed_x)) - 2
+                elif ball.speed_x >= ball.speed_max or ball.speed_x <= -ball.speed_max: # too high speed (constant line and errors in framecount logic)
+                    ball.speed_x = (ball.speed_max-2) * int(ball.speed_x / abs(ball.speed_x))
     
     def draw(self, img):
         for x in range(self.rect.x, self.rect.x + self.width):
-            # print(f"I'm in [{self.y}][{x}]")
             img[self.rect.y][x] = colors["movingbar"]
         return img
 
@@ -153,9 +145,7 @@ class ball_class():
         self.reset(x, y, lives)
     
     def draw(self, img):
-        # print(f"Ball in {self.rect.y} {self.rect.x}")
-
-        # is ball in range of img? (Add look-ahead collision!!!)
+        # is ball in range of img? may be deprecated!!
         if self.rect.x < 0:
             x = 0
         elif self.rect.x >= screen_width:
@@ -174,28 +164,24 @@ class ball_class():
             for item in row:
                 if not item[1]: continue # skip destroyed item
                 
-                for x in range(item[0].width):
-                    if (self.rect.top, self.rect.x) == (item[0].bottom, x+item[0].x) and self.speed_y < 0:
+                for x in range(item[0].width): # check vertical collision
+                    if (self.rect.top, self.rect.x) == (item[0].bottom, x+item[0].x) and self.speed_y < 0: # top of ball collided with items bottom
                         self.speed_y *= -1
-                        self.collision['y'] = True
-                        # print(f"I collided with bottom of {item[0]=}")
-                    elif (self.rect.bottom, self.rect.x) == (item[0].top, x+item[0].x) and self.speed_y > 0: # (y, x)
+                        self.collision['vertical'] = True
+                    elif (self.rect.bottom, self.rect.x) == (item[0].top, x+item[0].x) and self.speed_y > 0: # bottom of ball collided with items top
                         self.speed_y *= -1
-                        self.collision['y'] = True
-                        # print(f"I collided with top of {item[0]=}")
-                for y in range(item[0].height): # check 
-                    if (self.rect.y, self.rect.right) == (y+item[0].y, item[0].left) and self.speed_x > 0:
+                        self.collision['vertical'] = True
+                for y in range(item[0].height): # check horizontal collision
+                    if (self.rect.y, self.rect.right) == (y+item[0].y, item[0].left) and self.speed_x > 0: # right of ball collided with items left 
                         self.speed_x *= -1
-                        self.collision['x'] = True
-                        # print(f"I collided with left of {item[0]=}")
-                    elif (self.rect.y, self.rect.left) == (y+item[0].y, item[0].right) and self.speed_x < 0:
+                        self.collision['horizontal'] = True
+                    elif (self.rect.y, self.rect.left) == (y+item[0].y, item[0].right) and self.speed_x < 0: # left of ball collided with items right
                         self.speed_x *= -1
-                        self.collision['x'] = True
-                        # print(f"I collided with right of {item[0]=}")
+                        self.collision['horizontal'] = True
 
                 # handle item interaction on collision
                 if not item[1] == 9: # inspecting a breakable item
-                    if self.collision['x'] or self.collision['y']:
+                    if self.collision['horizontal'] or self.collision['vertical']:
                         self.collision['item'] = True
                         if item[1] > 3: # inspecting a one-time use item
                             if item[1] < 6: # inspecting either ice or fire
@@ -214,8 +200,8 @@ class ball_class():
                             item[1] -= 1
                     # wall still has health if breakable item has health
                     if not wall_alive and item[1]: wall_alive = True
-                self.collision['x'] = False
-                self.collision['y'] = False
+                self.collision['horizontal'] = False
+                self.collision['vertical'] = False
 
         if not wall_alive: self.game_over = 1; return
 
@@ -223,15 +209,12 @@ class ball_class():
         if self.rect.left <= 0:
             self.speed_x = abs(self.speed_x)
         if self.rect.right >= screen_width:
-            # print(f"I collided with the right side at ({self.rect.x},{self.rect.y}) setting {self.speed_x=} to {self.speed_x*-1}.")
             self.speed_x = -abs(self.speed_x)
         # handle collision with roof
         if self.rect.top <= 0:
-            # print("I am colliding with top of screen.")
             self.speed_y = abs(self.speed_y)
         # handle collision with void (bottom)
         if self.rect.bottom >= screen_height:
-            # print("I fell off of the map.")
             sleep(0.2)
             self.lives -= 1
             print(f"{self.lives=}")
@@ -257,17 +240,15 @@ class ball_class():
         if self.rect.colliderect(movingbar.rect):
             # check if colliding from the top
             if self.speed_y > 0:
-                # print(f"I am colliding with the movingbar at {self.rect.x, self.rect.y} :))")
                 self.speed_y = -abs(self.speed_y)
                 
-                # print(f"{self.speed_x+movingbar.direction} => {self.speed_x}")
                 self.collision['movingbar'] = True
                 
     def move(self, move_x, move_y):
         if move_x and not self.collision['movingbar']:
             self.rect.x += int(move_x * self.speed_x / abs(self.speed_x))
 
-        if move_y and not self.collision['x']:
+        if move_y and not self.collision['horizontal']:
             self.rect.y += int(move_y * self.speed_y / abs(self.speed_y))
             self.collision['movingbar'] = False
     
@@ -281,11 +262,10 @@ class ball_class():
         self.speed_x = 4 # speed is frame count at which x or y will be moved
         self.speed_y = -10 # and also the direction in which it will be moved at the frame count
         self.speed_max = 10
-        self.collision = {'x':False, 'y':False, 'item':True, 'movingbar':False}
+        self.collision = {'horizontal':False, 'vertical':False, 'item':True, 'movingbar':False}
         self.game_paused = False
         self.lives = lives
         self.game_over = 0
-        # print(f"Ball in {self.y} {self.x}")
 
     def pause_game(self):
         self.game_paused = not self.game_paused
@@ -308,7 +288,6 @@ class level_selection_class():
             self.selected_level += k
 
         self.y = 5 + 7 * int(self.selected_level//4) # WHY DOES THIS NEED AN INT CONVERSION???!?
-        # print(f"5 + 6 * {self.selected_level//4} = {self.y}")
         self.draw()
     
     def confirm(self):
