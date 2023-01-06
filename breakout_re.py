@@ -13,7 +13,6 @@
 
 # To-Do:
 # Unskippable Tasks:
-# - Some interactions with bomb explosions appear to break ball logics... consider interrupting ball logic and movement?
 # - With higher max speed facing illogical physics (prob. something with framecount logic and speed_x being higher than speed_y => frame skipping) and no x movement (x movement being within frames skipped)
 # - Make fire and ice blocks stable with framecount logic
 # - Only call wall.update_img() when block collision happened (causes ball trace for some reason, even with value declaration of new img)
@@ -77,7 +76,6 @@ class Wall():
     def __init__(self):
         self.width = 2
         self.height = 2
-        self.collision = False # deprecated?
         self.bombs_exploding = [] # holds information of exploding bombs
 
     def create(self, block_data: list):
