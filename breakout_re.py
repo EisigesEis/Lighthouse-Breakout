@@ -13,11 +13,13 @@
 
 # To-Do:
 # Unskippable Tasks:
+# - Some interactions with bomb explosions appear to break ball logics... consider interrupting ball logic and movement?
 # - With higher max speed facing illogical physics (prob. something with framecount logic and speed_x being higher than speed_y => frame skipping) and no x movement (x movement being within frames skipped)
 # - Make fire and ice blocks stable with framecount logic
 # - Only call wall.update_img() when block collision happened (causes ball trace for some reason, even with value declaration of new img)
 
 # Relevant Tasks:
+# - Delete broken items when strength reaches 0
 # - Add functionality for special blocks
 # - Add custom block build functionality (with width and height)
 # - Add more Levels and difficulty setting
@@ -61,6 +63,12 @@ colors = {
         [75, 0, 130], # bomb (exploding)
         [142, 135, 124], # grey (unbreakable)
     ],
+    "bombs_exploding":[
+        [120, 0, 70],
+        [170, 33, 60],
+        [168, 65, 70],
+        [180, 75, 80]
+    ],
     "movingbar":[142, 135, 123],
     "ball":[220, 220, 220]
 }
@@ -70,6 +78,7 @@ class Wall():
         self.width = 2
         self.height = 2
         self.collision = False # deprecated?
+        self.bombs_exploding = [] # holds information of exploding bombs
 
     def create(self, block_data: list):
         self.blocks = []
@@ -107,9 +116,16 @@ class Wall():
         for row in self.blocks:
             for item in row:
                 if item[1]:
-                    for y in range(item[0].y, item[0].y + item[0].width):
+                    for y in range(item[0].y, item[0].y + item[0].height):
                         for x in range(item[0].x, item[0].x + item[0].width):
                             self.img[y][x] = colors["block"][item[1]-1]
+
+        for bomb in self.bombs_exploding:
+            exploded = bomb.explode()
+            if exploded:
+                self.bombs_exploding.pop(self.bombs_exploding.index(bomb))
+            else:
+                self.img = bomb.draw(self.img)
 
 class Movingbar():
     def __init__(self):
@@ -197,6 +213,8 @@ class Ball():
                                 if ball.speed_x == 0:
                                     ball.speed_x = -addition
                                 # sign = int(ball.speed_x/abs(ball.speed_x))
+                            elif item[1] == 8: # inspecting bomb
+                                wall.bombs_exploding.append(Bomb(item[0]))
                             
                             item[1] = 0 # item was one-time use, so destruct item
                         elif item[1]: # inspecting strength-based block
@@ -302,7 +320,54 @@ class Level_Selection():
         for x in range(self.width):
             next_img[self.y*28 + (self.selected_level - self.selected_level//4*4) * (2 + self.width) + x + 2] = colors["movingbar"]
         p.set_image(next_img)
-        
+
+class Bomb():
+    def __init__(self, rect):
+        self.state = 0
+        self.rect = pygame.Rect(rect.x, rect.y, rect.width, rect.height)
+        self.framecount = 1
+    
+    def draw(self, img):
+        if not self.state: # first explosion state
+            for y in range(self.rect.y, self.rect.y+self.rect.height):
+                for x in range(self.rect.x, self.rect.x+self.rect.width):
+                    img[y][x] = colors["bombs_exploding"][self.state]
+        else:
+            # color outer edges
+            for y in [self.rect.y, self.rect.y+self.rect.height-1]:
+                for x in [self.rect.x+1, self.rect.x+self.rect.width-2]:
+                    if y >= 0 and x >= 0 and y <= screen_height-1 and x <= screen_width-1: # coloring is within limits
+                        img[y][x] = colors["bombs_exploding"][self.state+1]
+
+            # color explosion circle
+            center_x = self.rect.x + self.rect.width/4
+            center_y = self.rect.y + self.rect.height/4
+            radius = self.state*2 # state 1: radius 2; state 2: radius 4
+            for y in range(screen_height-1):
+                for x in range(screen_width-1):
+                    if abs(x - center_x) + abs(y - center_y) <= radius:
+                        img[int(y + radius/2)][int(x + radius/2)] = colors["bombs_exploding"][self.state]
+
+        return img
+
+    def explode(self):
+        self.framecount += 1
+        if self.framecount//30: # every 30 frames a new explosion state is reached
+            self.framecount = 1
+            self.state += 1
+            if self.state > 2:
+                print("finished exploding")
+                return True # finished explosion
+            self.rect.update(self.rect.x-2, self.rect.y-2, self.rect.width+4, self.rect.height+4)
+            
+            # explosion collision logic
+            for row in wall.blocks:
+                for item in row:
+                    if item[1] and item[1] != 9: # inspecting healthy breakable item
+                        if self.rect.colliderect(item[0]): # colliding with it
+                            item[1] -= 1 # damage item :)
+
+
 def draw_board():
     wall.update_img()
     img = wall.img[:]
