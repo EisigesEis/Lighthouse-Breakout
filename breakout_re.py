@@ -13,7 +13,7 @@
 
 # To-Do:
 # Unskippable Tasks:
-# - Explosion Chain!!
+# - Fix Bomb rendering issues (2-wide blank space around edge of map)
 # - With higher max speed facing illogical physics (prob. something with framecount logic and speed_x being higher than speed_y => frame skipping) and no x movement (x movement being within frames skipped)
 # - Make fire and ice blocks stable with framecount logic
 # - Only call wall.update_img() when block collision happened (causes ball trace for some reason, even with value declaration of new img)
@@ -296,7 +296,7 @@ class Level_Selection():
         self.selected_level = 0
         self.width = 4
         self.y = 5
-        self.callback_img = [colors["block"][int(x)] if int(x) else [0,0,0] for string in callback for x in string]
+        self.callback_img = [colors["block"][int(x)-1] if int(x) else [0,0,0] for string in callback for x in string]
         self.draw()
     
     def select(self, k):
@@ -345,7 +345,8 @@ class Bomb():
             for y in range(screen_height-1):
                 for x in range(screen_width-1):
                     if abs(x - center_x) + abs(y - center_y) <= radius:
-                        img[int(y + radius/2)][int(x + radius/2)] = colors["bombs_exploding"][self.state]
+                        if y + radius/2 < screen_height and x + radius/2 < screen_width: # coloring within limits
+                            img[int(y + radius/2)][int(x + radius/2)] = colors["bombs_exploding"][self.state]
 
         return img
 
@@ -355,7 +356,6 @@ class Bomb():
             self.framecount = 1
             self.state += 1
             if self.state > 2:
-                print("finished exploding")
                 return True # finished explosion
             self.rect.update(self.rect.x-2, self.rect.y-2, self.rect.width+4, self.rect.height+4)
             
@@ -364,7 +364,12 @@ class Bomb():
                 for item in row:
                     if item[1] and item[1] != 9: # inspecting healthy breakable item
                         if self.rect.colliderect(item[0]): # colliding with it
-                            item[1] -= 1 # damage item :)
+                            # if item[1] > 3:
+                            if item[1] == 8: # bomb chain reaction
+                                wall.bombs_exploding.append(Bomb(item[0]))
+                                # item[1] = 0 # one time use item
+                            item[1] = 0
+                            # item[1] -= 1 # damage strength-based item :)
 
 
 def draw_board():
