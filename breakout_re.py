@@ -13,6 +13,7 @@
 
 # To-Do:
 # Unskippable Tasks:
+# - Explosion Chain!!
 # - With higher max speed facing illogical physics (prob. something with framecount logic and speed_x being higher than speed_y => frame skipping) and no x movement (x movement being within frames skipped)
 # - Make fire and ice blocks stable with framecount logic
 # - Only call wall.update_img() when block collision happened (causes ball trace for some reason, even with value declaration of new img)
@@ -52,7 +53,7 @@ fps = 60
 colors = {
     "background":[30, 30, 30],
     "block":[
-        [242, 85, 96], # red
+        [220,20,60], # red
         [86, 174, 87], # green
         [69, 177, 232], # blue
         [242, 125, 12], # fire (speeds up ball.speed_x and .speed_y and .max_speed_x)
@@ -295,7 +296,7 @@ class Level_Selection():
         self.selected_level = 0
         self.width = 4
         self.y = 5
-        self.callback_img = [[255,255,255] if int(x) else [0,0,0] for string in callback for x in string]
+        self.callback_img = [colors["block"][int(x)] if int(x) else [0,0,0] for string in callback for x in string]
         self.draw()
     
     def select(self, k):
