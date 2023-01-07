@@ -7,7 +7,7 @@
 ; ä => suspend hotkeys
 ; ü => close all open game sessions (active as well as in-active)
 ; ß => reload script (recommended after window switching)
-;
+; RESTART (press ß) AFTER EACH WINDOW SWITCH FOR THE FOLLOWING TO CONSISTENTLY WORK:
 ; i => up press (w)
 ; j => bulk left movement (a)
 ; k => down press (s)
@@ -56,7 +56,7 @@ Return
 SC00C::Reload ; => ß
 
 
-#IfWinActive ahk_exe firefox.exe
+; #IfWinActive ahk_exe firefox.exe
 j::
     while GetKeyState("j","P")
     {
