@@ -13,7 +13,6 @@
 
 # To-Do:
 # Unskippable Tasks:
-# - Fix Bomb rendering issues (2-wide blank space around edge of map)
 # - With higher max speed facing illogical physics (prob. something with framecount logic and speed_x being higher than speed_y => frame skipping) and no x movement (x movement being within frames skipped)
 # - Make fire and ice blocks stable with framecount logic
 # - Only call wall.update_img() when block collision happened (causes ball trace for some reason, even with value declaration of new img)
@@ -21,14 +20,14 @@
 # Relevant Tasks:
 # - Delete broken items when strength reaches 0
 # - Add functionality for special blocks
-# - Add custom block build functionality (with width and height)
+# - Add custom block build functionality (x, y, width, height)
 # - Add more Levels and difficulty setting
 
 # Look-Ahead Collision:
 # - Optimize collision check to only check in range or route of ball
-# - Check if ball collides when speed is applied, not when ball already collided
 
 # minor:
+# - Create ball start and reset animations
 # - ball color turns grey on impact with unbreakable block or high speed (hardly reachable with current speed levels)
 # (- Implement own FPS Clock)
 # (- Optimize keybind hold-down recognition) <- workaround using autohotkey
@@ -153,7 +152,6 @@ class Movingbar():
         self.width = 7
         self.x = int((screen_width / 2) - (self.width / 2))
         self.y = 12
-        self.speed = 6 # deprecated
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
         self.direction = 0
 
@@ -171,7 +169,7 @@ class Ball():
             x = self.rect.x
         
         if self.collision["movingbar"]:
-            img[self.rect.y][x] = [128, 9, 9]
+            img[self.rect.y][x] = [128, 9, 9] # ball turns dark red when affectable by movement of movingbar
         else:
             img[self.rect.y][x] = colors["ball"]
         return img
@@ -240,7 +238,8 @@ class Ball():
             print(f"{self.lives=}")
             if not self.lives:
                 self.game_over = -1
-            else:
+            else: # life was used, ball is reset
+                keyboard.unhook_all() # no movingbar movement during paused game
                 self.reset(movingbar.rect.x + (int(movingbar.width / 2)), movingbar.rect.y - movingbar.height, self.lives)
                 draw_board()
                 # draw life bar
@@ -255,6 +254,9 @@ class Ball():
                         img[1][x+1] = [220,20,60]
                 p.set_image(img)
                 keyboard.wait('w')
+                keyboard.add_hotkey('d', lambda: movingbar.move(1))
+                keyboard.add_hotkey('a', lambda: movingbar.move(-1))
+                keyboard.add_hotkey('s', lambda: ball.pause_game())
 
         # handle collision with movingbar
         if self.rect.colliderect(movingbar.rect):
@@ -387,7 +389,7 @@ def delete_session():
     p.close()
     sleep(4)
     quit()
-keyboard.add_hotkey('shift', lambda: delete_session())
+keyboard.add_hotkey('shift', lambda: delete_session()) # for some reason keyboard can't quit the program on keypress
 
 
 while 1: # outer game loop
@@ -409,7 +411,7 @@ while 1: # outer game loop
 
     # wait for player to start
     print("\nLevel has been loaded! Press up to begin.")
-    keyboard.wait('w') # give the paddle a ball start and a reset animation :D
+    keyboard.wait('w')
 
     # add hotkey listeners
     keyboard.add_hotkey('d', lambda: movingbar.move(1))
@@ -419,13 +421,6 @@ while 1: # outer game loop
     framecounter = 0 # for operations that happen every n frame
     # main game loop
     while not ball.game_over:
-        # startTime = time()
-        # key = keyboard.read_key()
-        # print(time() - startTime)
-        # if key == "left":
-        #     movingbar.move(-1)
-        # elif key == "right":
-        #     movingbar.move(1)
         clock.tick(fps) # ticks at fps the game runs at
 
         # game pause functionality
