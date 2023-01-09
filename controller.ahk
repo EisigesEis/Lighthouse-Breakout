@@ -32,7 +32,7 @@ SC01A:: ; => ü
     {
         if sessionPIDs.MaxIndex() {
             For k, v in sessionPIDs {
-                WinClose, ahk_pid %PID%
+                WinClose, ahk_pid %v%
             }
             sessionPIDs := []
         } else {
@@ -56,7 +56,7 @@ Return
 SC00C::Reload ; => ß
 
 
-; #IfWinActive ahk_exe firefox.exe
+#IfWinExist ahk_exe cmd.exe
 j::
     while GetKeyState("j","P")
     {
