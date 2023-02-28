@@ -3,7 +3,7 @@
 ; workaround to the problems faced trying to register key holds
 
 ;list of inputs:
-; ö => start new game session, reload script
+; ö => start new game session
 ; ä => suspend hotkeys
 ; ü => close all open game sessions (active as well as in-active)
 ; ß => reload script (recommended after window switching)

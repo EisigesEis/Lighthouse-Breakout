@@ -1,37 +1,3 @@
-#Usage Guide:
-# Level Selection:
-# - Press {Left Arrow} and {Right Arrow} key to select a level with the grey bar.
-# - Press {Up Arrow} to confirm your selection.
-# In-Game:
-# - Destroy all blocks with the ball to win the round. If your ball hits the bottom,
-#   you lose a life. You have a total of 3 lives.
-# - When the ball is above your grey bar, press {Up Arrow} to initiate movement.
-# - Press {Left Arrow} and {Right Arrow} to move the grey bar.
-#   When the ball is touching the grey bar (dark red indication),
-#   you can inflict momentum on the ball by moving the bar.
-# - Press {Down Arrow} to pause the game. Then press {Up Arrow} to resume.
-
-# To-Do:
-# Unskippable Tasks:
-# - With higher max speed facing illogical physics (prob. something with framecount logic and speed_x being higher than speed_y => frame skipping) and no x movement (x movement being within frames skipped)
-# - Make fire and ice blocks stable with framecount logic
-# - Only call wall.update_img() when block collision happened (causes ball trace for some reason, even with value declaration of new img)
-
-# Relevant Tasks:
-# - Delete broken items when strength reaches 0
-# - Add functionality for special blocks
-# - Add custom block build functionality (x, y, width, height)
-# - Add more Levels and difficulty setting
-
-# Look-Ahead Collision:
-# - Optimize collision check to only check in range or route of ball
-
-# minor:
-# - Create ball start and reset animations
-# - ball color turns grey on impact with unbreakable block or high speed (hardly reachable with current speed levels)
-# (- Implement own FPS Clock)
-# (- Optimize keybind hold-down recognition) <- workaround using autohotkey
-
 from pyghthouse import Pyghthouse, VerbosityLevel
 from login import username, token
 from breakout_data import levelmap, callback, finish_screen
@@ -347,7 +313,7 @@ class Bomb():
             for y in range(screen_height-1):
                 for x in range(screen_width-1):
                     if abs(x - center_x) + abs(y - center_y) <= radius:
-                        if y + radius/2 < screen_height and x + radius/2 < screen_width: # coloring within limits
+                        if int(y + radius/2) < screen_height and int(x + radius/2) < screen_width: # coloring within limits
                             img[int(y + radius/2)][int(x + radius/2)] = colors["bombs_exploding"][self.state]
 
         return img
