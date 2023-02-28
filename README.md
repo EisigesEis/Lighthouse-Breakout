@@ -1,5 +1,5 @@
 # Lighthouse-Breakout
-A [Lighthouse-CAU](https://github.com/ProjectLighthouseCAU) submission in `Wintersemester 22/23` for the module `Einführung in die Informatik`. It is hardcoded for a screen-size of 28x14 and was not displayed on the high-rise building due to energy saving measurements.
+A [Lighthouse-CAU](https://github.com/ProjectLighthouseCAU) submission in `Wintersemester 22/23` for the module `Einführung in die Informatik` created by Eisiges Eis. It is hardcoded for a screen-size of 28x14 and was not displayed on the high-rise building due to energy saving measurements.
 
 ## Quick Start
 1. Clone the Repository to your local machine.
@@ -66,3 +66,6 @@ I was not able to find a python module which instantly recognizes keys being hel
 - ball color turns grey on impact with unbreakable block or high speed (hardly reachable with current speed levels)
 - Implement own FPS Clock
 - Optimize keybind hold-down recognition <- workaround using autohotkey controller.ahk
+
+## License
+[APGL License](LICENSE)
