@@ -3,8 +3,9 @@ A [Lighthouse-CAU](https://github.com/ProjectLighthouseCAU) submission in `Winte
 
 ## Quick Start
 1. Clone the Repository to your local machine.
-2. Place a file named `login.py` in the same folder. Within it, define `username` and `token` accordingly.
-3. Start the game through either `python breakout_re.py` or usage of the `controller.ahk` file.
+2. Install the requirements using `pip install -r requirements.txt`. You may have to manually install the latest version of [Pyghthouse](https://github.com/ProjectLighthouseCAU/pyghthouse) due to reference of a non-existing version of numpy within that package.
+3. Place a file named `login.py` in the same folder. Within it, define `username` and `token` accordingly.
+4. Start the game through either `python breakout_re.py` or usage of the `controller.ahk` file.
 
 ## Playing Guide
 ### Level Selection
